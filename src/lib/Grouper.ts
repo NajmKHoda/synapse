@@ -61,8 +61,8 @@ export default class Grouper {
                     avg_personality_vec = avg_personality_vec.map((p, idx) => p + student.personality_vector[idx])
                 }
 
-                avg_question_scores.map((s) => s/(group.length));
-                avg_personality_vec.map((p) => p/group.length);
+                avg_question_scores = avg_question_scores.map((s) => s/(group.length));
+                avg_personality_vec = avg_personality_vec.map((p) => p/group.length);
 
                 const matchRatings = [];
                 for (const student of copy_students) {
