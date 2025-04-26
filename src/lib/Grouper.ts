@@ -55,10 +55,8 @@ export default class Grouper {
 
                 // Initialize avg vectors
                 const group = groups[i];
-                let avg_question_scores: number[] = [];
-                let avg_personality_vec: number[] = [];
-                avg_question_scores.fill(0, 0, scores[0].question_scores.length);
-                avg_personality_vec.fill(0, 0, students[0].personality_vector.length);
+                let avg_question_scores = new Array(scores[0].question_scores.length).fill(0);
+                let avg_personality_vec = new Array(students[0].personality_vector.length).fill(0);
 
                 // Add score/personality vectors
                 for (let j = 0; j < group.length; j++) {
@@ -83,7 +81,11 @@ export default class Grouper {
 
                 // Push highest and remove
                 const maxRatingIdx = matchRatings.indexOf(Math.max(...matchRatings));
-                group.push(copy_students[matchRatings.indexOf(maxRatingIdx)]);
+                const student = students.find((s) => s.id === copy_students[maxRatingIdx].id)
+                if (student === undefined) {
+                    throw new Error("Couldn't find a student")
+                }
+                group.push(student);
                 copy_students.splice(maxRatingIdx, 1);
             }
         }
