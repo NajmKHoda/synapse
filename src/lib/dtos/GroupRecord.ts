@@ -1,4 +1,4 @@
-export default class GroupingReport {
+export default class GroupRecord {
     date: string;
     alpha: number;
     beta: number;
