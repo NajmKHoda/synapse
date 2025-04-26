@@ -50,10 +50,14 @@ export default function Login() {
     setError('');
 
     try {
-      const { error } = await signInWithGoogle();
+      // Catch the result to check if it's a new user
+      const { data, error } = await signInWithGoogle();
 
       if (error) throw error;
-      // User will be redirected away, so no need to handle success case here
+      
+      // No further client-side logic needed here as the user will be redirected
+      // Any teacher creation should be handled server-side in the signInWithGoogle function
+      // or via a server-side hook/trigger after authentication
     } catch (err) {
       const authError = err as AuthError;
       setError(`Google sign-in failed: ${authError.message}`);

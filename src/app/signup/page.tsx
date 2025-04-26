@@ -47,6 +47,21 @@ export default function SignUp() {
     checkSessionAndErrors();
   }, [router]);
 
+  const createTeacherProfile = async (userId: string, userName: string) => {
+    try {
+      const { error: insertError } = await supabase
+        .from('Teacher')
+        .insert([{ id: userId, name: userName }]);
+        
+      if (insertError) {
+        throw new Error(`Failed to save profile: ${insertError.message}`);
+      }
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -67,19 +82,17 @@ export default function SignUp() {
       return;
     }
 
-    // 2. Insert user profile into Teacher table
-    const { error: insertError } = await supabase
-      .from('Teacher')
-      .insert([{ id: userId, name }]);
-    if (insertError) {
-      setError(`Failed to save profile: ${insertError.message}`);
+    // 2. Insert user profile into Teacher table using the shared function
+    const { success, error: profileError } = await createTeacherProfile(userId, name);
+    if (!success) {
+      setError(profileError || 'Failed to create teacher profile');
       setLoading(false);
       return;
     }
 
     // 3. Redirect to dashboard
     setLoading(false);
-     router.push('/dashboard');
+    router.push('/dashboard');
   };
 
   const handleGoogleSignUp = async () => {
@@ -96,7 +109,22 @@ export default function SignUp() {
         }
         throw oauthError;
       }
-      // User will be redirected away, so no need to handle success case here
+      
+      // Check for session immediately after successful OAuth (though redirect will happen)
+      const { data: { session } } = await getSession();
+      if (session?.user) {
+        // Create teacher profile if session exists
+        const userName = session.user.user_metadata?.full_name || 'Google User';
+        const { success, error: profileError } = await createTeacherProfile(session.user.id, userName);
+        
+        if (!success) {
+          throw new Error(profileError || 'Failed to create teacher profile');
+        }
+        
+        // Redirect to dashboard after successful profile creation
+        router.push('/dashboard');
+      }
+      // User will be redirected away, so no need to handle success case further
     } catch (err) {
       const authError = err as any;
       setError(authError.message || 'Google sign-up failed. Please try again.');

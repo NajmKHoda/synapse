@@ -36,13 +36,35 @@ export const signInWithEmail = async (email: string, password: string) => {
 }
 
 export const signInWithGoogle = async () => {
-  const supabase = getSupabase();
-  return supabase.auth.signInWithOAuth({
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/dashboard`,
-    },
+      redirectTo: `${window.location.origin}/auth/callback`,
+    }
   });
+  
+  return { data, error };
+};
+
+// Add a new function to create teacher record
+export const createTeacherRecord = async (userId: string, name: string) => {
+  const { data, error } = await supabase
+    .from('Teacher')
+    .insert([{ id: userId, name: name }])
+    .select();
+  
+  return { data, error };
+};
+
+// Function to check if a teacher record exists
+export const checkTeacherExists = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('Teacher')
+    .select('id')
+    .eq('id', userId)
+    .single();
+  
+  return { exists: !!data, error };
 };
 
 export const signOut = async () => {
