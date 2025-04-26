@@ -26,9 +26,10 @@ export default class Grouper {
         const num_groups = Math.round(students.length / group_size);
         const groups = [];
 
-        // Create a copy of the students to be rmoved from as students are grouped
+        // Create a copy of the students to be removed from as students are grouped
         let copy_students = [...students];
 
+        // Assign a random student to each group
         try {
             for (let i = 0; i < num_groups; i++) {
                 let idx = Math.floor(Math.random() * copy_students.length);
@@ -39,6 +40,7 @@ export default class Grouper {
             throw new Error("Not enough students for a group that size!");
         }
 
+        // Loop until all students have been removed from the array copy
         while (true) {
             if (copy_students.length === 0) {
                 break;
@@ -48,12 +50,14 @@ export default class Grouper {
                     break;
                 }
 
+                // Initialize avg vectors
                 const group = groups[i];
                 let avg_question_scores: number[] = [];
                 let avg_personality_vec: number[] = [];
                 avg_question_scores.fill(0, 0, assignment.max_scores.length);
                 avg_personality_vec.fill(0, 0, students[0].personality_vector.length);
 
+                // Add score/personality vectors
                 for (let j = 0; j < group.length; j++) {
                     const student = group[j];
                     const score = scores[students.findIndex((s) => s.id === student.id)];
@@ -61,9 +65,11 @@ export default class Grouper {
                     avg_personality_vec = avg_personality_vec.map((p, idx) => p + student.personality_vector[idx])
                 }
 
-                avg_question_scores = avg_question_scores.map((s) => s/(group.length));
+                // Divide by current group size
+                avg_question_scores = avg_question_scores.map((s) => s/group.length);
                 avg_personality_vec = avg_personality_vec.map((p) => p/group.length);
 
+                // Calculate mean difference between average vectors and each other student
                 const matchRatings = [];
                 for (const student of copy_students) {
                     const score = scores[students.findIndex((s) => s.id === student.id)];
@@ -72,12 +78,14 @@ export default class Grouper {
                     matchRatings.push(alpha * scoreDiff + beta * (1 - personalityDiff))
                 }
 
+                // Push highest and remove
                 const maxRatingIdx = matchRatings.indexOf(Math.max(...matchRatings))
                 group.push(copy_students[matchRatings.indexOf(maxRatingIdx)])
                 copy_students.splice(maxRatingIdx, 1);
             }
         }
 
+        // Map back to Group objects and return
         return groups.map((s_arr) => new Group(s_arr.map((s) => s.id)))
     }
 
