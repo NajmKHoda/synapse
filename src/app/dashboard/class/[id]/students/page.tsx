@@ -117,8 +117,13 @@ export default function StudentsPage() {
         return
       }
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const res = await fetch('/api/send-surveys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Unknown error');
       
       // Update UI to mark all pending students as sent
       setStudents(prev => 
@@ -129,10 +134,10 @@ export default function StudentsPage() {
         )
       )
       
-      toast.success(`Sent ${studentsToEmail.length} assessment emails`)
-    } catch (error) {
-      console.error('Failed to send emails:', error)
-      toast.error('Failed to send emails')
+      toast.success(`Sent ${json.count} emails`)
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message);
     } finally {
       setSendingEmails(false)
     }
