@@ -1,19 +1,37 @@
 import Assignment from "./dtos/Assignment";
 import Student from "./dtos/Student";
 import Group from "./dtos/Group";
-import GroupingReport from "./dtos/GroupingReport";
+import GroupRecord from "./dtos/GroupRecord";
+import Score from "./dtos/Score"
+
+import ScoreSchema from "./data/ScoreSchema";
+import StudentSchema from "./data/StudentSchema";
 
 export default class Grouper {
-    static create_grouping_report(group_size: number, assignment: Assignment, students: Student[], pairing_params: [number, number]) {
-        const report = new GroupingReport(new Date().toISOString(), assignment.id, [], pairing_params);
+    static async create_groups(group_size: number, alpha: number, beta: number, gemini_context: string, assignment: Assignment) {
+        // Get scores and students
+        const scores = await ScoreSchema.get_by_assignment(assignment.id);
+        if (scores === null) {
+            throw new Error("Failed getting scores! Please retry.")
+        }
+        const students: Student[] = [];
+        for (let i = 0; i < scores.length; i++) {
+            let studentSchema = await StudentSchema.get_schema(scores[i].student_id)
+            if (studentSchema === null) {
+                throw new Error("Failed getting student data! Please retry.")
+            }
+            students.push(StudentSchema.to_dto(studentSchema))
+        }
+
         const num_groups = Math.round(students.length / group_size);
         const groups = [];
 
+        // Create a copy of the students to be rmoved from as students are grouped
         let copy_students = [...students];
 
         try {
             for (let i = 0; i < num_groups; i++) {
-                let idx = Math.floor(Math.random()*copy_students.length);
+                let idx = Math.floor(Math.random() * copy_students.length);
                 groups.push([copy_students[idx]]);
                 copy_students.splice(idx, 1);
             }
@@ -22,17 +40,45 @@ export default class Grouper {
         }
 
         while (true) {
+            if (copy_students.length === 0) {
+                break;
+            }
             for (let i = 0; i < num_groups; i++) {
-                let group = groups[i];
-                let avg_score_per_question = [];
-                let avg_personality_vec = [];
-                
-                for (let j = 0; j < assignment.max_scores.length; j++) {
-
+                if (copy_students.length === 0) {
+                    break;
                 }
-                
+
+                const group = groups[i];
+                let avg_question_scores: number[] = [];
+                let avg_personality_vec: number[] = [];
+                avg_question_scores.fill(0, 0, assignment.max_scores.length);
+                avg_personality_vec.fill(0, 0, students[0].personality_vector.length);
+
+                for (let j = 0; j < group.length; j++) {
+                    const student = group[j];
+                    const score = scores[students.findIndex((s) => s.id === student.id)];
+                    avg_question_scores = avg_question_scores.map((s, idx) => s + score.question_scores[idx]);
+                    avg_personality_vec = avg_personality_vec.map((p, idx) => p + student.personality_vector[idx])
+                }
+
+                avg_question_scores.map((s) => s/(group.length));
+                avg_personality_vec.map((p) => p/group.length);
+
+                const matchRatings = [];
+                for (const student of copy_students) {
+                    const score = scores[students.findIndex((s) => s.id === student.id)];
+                    const scoreDiff = this.mean_squared_difference(score.question_scores, avg_question_scores)
+                    const personalityDiff = this.mean_squared_difference(student.personality_vector, avg_personality_vec)
+                    matchRatings.push(alpha * scoreDiff + beta * (1 - personalityDiff))
+                }
+
+                const maxRatingIdx = matchRatings.indexOf(Math.max(...matchRatings))
+                group.push(copy_students[matchRatings.indexOf(maxRatingIdx)])
+                copy_students.splice(maxRatingIdx, 1);
             }
         }
+
+        return groups.map((s_arr) => new Group(s_arr.map((s) => s.id)))
     }
 
     static mean_squared_difference(vector1: number[], vector2: number[]) {
