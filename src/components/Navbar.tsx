@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { getSession, signOut, getSupabase } from "@/lib/supabase";
 import { Session, User, AuthChangeEvent } from "@supabase/supabase-js";
 import { Brain, Menu, X } from "lucide-react";
-import Button from "./ui/button";
+import Button from "./ui/Button";
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
