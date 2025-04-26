@@ -95,7 +95,7 @@ export default function Dashboard() {
                       className={`
                         relative border-2 border-dashed rounded-xl p-8 
                         transition-all duration-300 flex flex-col items-center justify-center gap-4
-                        ${dragActive ? "border-mint bg-mint/10" : "border-gray-200 hover:border-sunny hover:bg-sunny/5"}
+                        ${dragActive ? "border-mint bg-mint/10" : "border-gray-200 hover:border-[var(--sunny)] hover:bg-[var(--sunny)]/5"}
                         ${uploadStatus === "success" ? "border-mint bg-mint-light" : ""}
                         ${uploadStatus === "error" ? "border-red-400 bg-red-50" : ""}
                         min-h-[240px]
@@ -116,15 +116,15 @@ export default function Dashboard() {
 
                       {uploadStatus === "idle" && (
                         <>
-                          <div className="h-16 w-16 rounded-full bg-sunny/20 flex items-center justify-center mb-2">
-                            <Upload className="h-8 w-8 text-sunny" />
+                          <div className="h-16 w-16 rounded-full bg-[var(--sunny)]/20 flex items-center justify-center mb-2">
+                            <Upload className="h-8 w-8 text-[var(--sunny)]" />
                           </div>
                           <h3 className="text-lg font-medium text-gray-800">Drag & Drop CSV Files Here</h3>
                           <p className="text-gray-500 text-center max-w-md">
                             Upload your student data in CSV format. Each file should include student names, academic
                             strengths, and personality traits.
                           </p>
-                          <Button onClick={onButtonClick} className="mt-2 bg-sunny text-gray-800 hover:bg-sunny/90">
+                          <Button onClick={onButtonClick} className="mt-2 bg-[var(--sunny)] text-gray-800 hover:bg-[var(--sunny)]/90">
                             Select Files
                           </Button>
                         </>
@@ -175,7 +175,7 @@ export default function Dashboard() {
                           </p>
                           <Button
                             onClick={() => setUploadStatus("idle")}
-                            className="bg-sunny text-gray-800 hover:bg-sunny/90"
+                            className="bg-[var(--sunny)] text-gray-800 hover:bg-[var(--sunny)]/90"
                           >
                             Try Again
                           </Button>
