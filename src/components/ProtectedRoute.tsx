@@ -1,7 +1,8 @@
 "use client";
-import { ReactNode, useEffect } from 'react';
+
+import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStatus } from '@/components/useAuthStatus';
+import { supabase } from '@/lib/supabase';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -9,24 +10,43 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
-  const { isLoggedIn, loading } = useAuthStatus();
-  const shouldRedirect = !loading && !isLoggedIn;
-  
-  // Redirect to login if not logged in
+  const [session, setSession] = useState<null | object>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (shouldRedirect) {
+    // 1️⃣ Fetch initial session
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: object | null } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    // 2️⃣ Subscribe to auth changes (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event: string, session: object | null) => {
+        setSession(session);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // 3️⃣ Redirect once we know there’s no session
+  useEffect(() => {
+    if (!loading && !session) {
       router.push('/login');
     }
-  }, [shouldRedirect, router]);
+  }, [loading, session, router]);
 
-  // Show loading state
   if (loading) {
-    return <div>Loading...</div>; // or a nice spinner if you have one
+    return <div>Loading...</div>;
   }
 
-  // Since justLoggedIn is not available, we can't use this feature
-  // If you need this functionality, update useAuthStatus hook to provide justLoggedIn
-  if (shouldRedirect) return null;
+  // while redirecting, don’t flash the protected UI
+  if (!session) {
+    return null;
+  }
 
-  return children;
+  return <>{children}</>;
 }
