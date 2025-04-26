@@ -1,9 +1,7 @@
 "use client";
-// components/ProtectedRoute.tsx
-import { useEffect, useState, ReactNode } from 'react';
-import { useRouter } from 'next/navigation'; // Changed from 'next/router' to 'next/navigation'
-import { auth } from '@/lib/firebase'; // adjust the import if needed
-import { onAuthStateChanged } from 'firebase/auth';
+import { ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStatus } from '@/components/useAuthStatus';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,23 +9,21 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const { isLoggedIn, loading } = useAuthStatus();
+  
+  // Redirect to login if not logged in
+  if (!loading && !isLoggedIn) {
+    router.push('/login');
+    return null;
+  }
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        router.push('/login');
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
-
+  // Show loading state
   if (loading) {
     return <div>Loading...</div>; // or a nice spinner if you have one
   }
+
+  // Since justLoggedIn is not available, we can't use this feature
+  // If you need this functionality, update useAuthStatus hook to provide justLoggedIn
 
   return children;
 }
