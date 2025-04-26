@@ -1,7 +1,7 @@
-import Assignment from "./data/Assignment";
-import Student from "./data/Student";
-import Group from "./data/Group";
-import GroupingReport from "./data/GroupingReport";
+import Assignment from "./dtos/Assignment";
+import Student from "./dtos/Student";
+import Group from "./dtos/Group";
+import GroupingReport from "./dtos/GroupingReport";
 
 export default class Grouper {
     static create_grouping_report(group_size: number, assignment: Assignment, students: Student[], pairing_params: [number, number]) {
