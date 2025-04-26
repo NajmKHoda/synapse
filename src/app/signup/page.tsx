@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, getSupabase, signInWithGoogle, getSession } from '@/lib/supabase';
 
 export default function SignUp() {
   const [name, setName] = useState('');
@@ -12,6 +12,40 @@ export default function SignUp() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  // Check for existing session or OAuth return errors on mount
+  useEffect(() => {
+    const checkSessionAndErrors = async () => {
+      // Check for session
+      const { data: { session } } = await getSession();
+      if (session) {
+        router.push('/dashboard');
+        return;
+      }
+
+      // Check URL for OAuth error parameters
+      const url = new URL(window.location.href);
+      const errorCode = url.searchParams.get('error_code');
+      const errorDescription = url.searchParams.get('error_description');
+      
+      if (errorCode && errorDescription) {
+        // Format OAuth error for display
+        if (errorCode === 'unexpected_failure') {
+          setError('Google authentication failed. Please try again or use email signup instead.');
+        } else {
+          setError(`Authentication error (${errorCode}): ${errorDescription}`);
+        }
+        
+        // Clean up URL
+        url.searchParams.delete('error');
+        url.searchParams.delete('error_code');
+        url.searchParams.delete('error_description');
+        window.history.replaceState({}, document.title, url.toString());
+      }
+    };
+
+    checkSessionAndErrors();
+  }, [router]);
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,23 +79,29 @@ export default function SignUp() {
 
     // 3. Redirect to dashboard
     setLoading(false);
-    router.push('/dashboard');
+     router.push('/dashboard');
   };
 
   const handleGoogleSignUp = async () => {
     setLoading(true);
     setError('');
 
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
-    });
+    try {
+      // Add a small delay before redirect to reduce race conditions
+      const { error: oauthError } = await signInWithGoogle();
 
-    if (oauthError) {
-      setError(`Google sign-up failed: ${oauthError.message}`);
+      if (oauthError) {
+        if (oauthError.message.includes('server_error') || oauthError.message.includes('unexpected_failure')) {
+          throw new Error('Google authentication service is temporarily unavailable. Please try again later or use email signup.');
+        }
+        throw oauthError;
+      }
+      // User will be redirected away, so no need to handle success case here
+    } catch (err) {
+      const authError = err as any;
+      setError(authError.message || 'Google sign-up failed. Please try again.');
       setLoading(false);
     }
-    // On success, user is redirected by Supabase
   };
 
   return (
@@ -74,8 +114,19 @@ export default function SignUp() {
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Error: </strong>
             <span className="block sm:inline">{error}</span>
+            <button 
+              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+              onClick={() => setError('')}
+            >
+              <span className="sr-only">Dismiss</span>
+              <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <title>Close</title>
+                <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+              </svg>
+            </button>
           </div>
         )}
 

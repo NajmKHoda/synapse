@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase, getSupabase } from '@/lib/supabase';
-import { AuthError, Session } from '@supabase/supabase-js';
+import { signInWithEmail, signInWithGoogle, getSession } from '@/lib/supabase';
+import { AuthError } from '@supabase/supabase-js';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -16,8 +16,7 @@ export default function Login() {
   // Check for existing session or OAuth return on mount
   useEffect(() => {
     const checkSession = async (): Promise<void> => {
-      const client = getSupabase();
-      const { data: { session } } = await client.auth.getSession();
+      const { data: { session } } = await getSession();
 
       if (session) {
         router.push('/dashboard');
@@ -25,18 +24,6 @@ export default function Login() {
     };
 
     checkSession();
-
-    // Also setup auth state change listener
-    const client = getSupabase();
-    const { data: { subscription } } = client.auth.onAuthStateChange((event: string, session: Session | null) => {
-      if (event === 'SIGNED_IN' && session) {
-        router.push('/dashboard');
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, [router]);
 
   const handleEmailLogin = async (e: React.FormEvent): Promise<void> => {
@@ -45,11 +32,7 @@ export default function Login() {
     setError('');
 
     try {
-      const client = getSupabase();
-      const { data, error } = await client.auth.signInWithPassword({
-        email,
-        password
-      });
+      const { data, error } = await signInWithEmail(email, password);
 
       if (error) throw error;
 
@@ -67,13 +50,7 @@ export default function Login() {
     setError('');
 
     try {
-      const client = getSupabase();
-      const { error } = await client.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
+      const { error } = await signInWithGoogle();
 
       if (error) throw error;
       // User will be redirected away, so no need to handle success case here
@@ -95,7 +72,18 @@ export default function Login() {
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Error: </strong>
             <span className="block sm:inline">{error}</span>
+            <button 
+              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+              onClick={() => setError('')}
+            >
+              <span className="sr-only">Dismiss</span>
+              <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <title>Close</title>
+                <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+              </svg>
+            </button>
           </div>
         )}
 
@@ -158,7 +146,6 @@ export default function Login() {
               disabled={loading}
               className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]"
             >
-              {/* Google logo SVG unchanged */}
               <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" width="24" height="24">
                 {/* ...paths... */}
               </svg>

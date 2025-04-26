@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getSession, signOut, getSupabase } from "@/lib/supabase";
 import { Session, User, AuthChangeEvent } from "@supabase/supabase-js";
 import { Brain, Menu, X } from "lucide-react";
 import Button from "./ui/Button";
@@ -14,17 +14,21 @@ export default function Navbar() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!supabase) return;
-
     // Fetch initial session
     const fetchSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+      try {
+        const { data } = await getSession();
+        setUser(data.session?.user ?? null);
+      } catch (error) {
+        console.error("Error fetching session:", error);
+        setUser(null);
+      }
     };
 
     fetchSession();
 
     // Listen to auth changes
+    const supabase = getSupabase();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_: AuthChangeEvent, session: Session | null) => {
       setUser(session?.user ?? null);
     });
@@ -41,7 +45,7 @@ export default function Navbar() {
   }, [mobileOpen]);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     setUser(null);
     setMobileOpen(false);
     router.push('/login');
