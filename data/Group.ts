@@ -1,11 +1,13 @@
 export default class Group {
     id: string;
     student_ids: string[];
-    grouping_reason: string;
+    academic_strength: number;
+    social_strength: number;
 
-    constructor(id: string, student_ids: string[], grouping_reason: string) {
+    constructor(id: string, student_ids: string[], academic_strength: number, social_strength: number) {
         this.id = id;
         this.student_ids = student_ids;
-        this.grouping_reason = grouping_reason;
+        this.academic_strength = academic_strength;
+        this.social_strength = social_strength;
     }
 }
