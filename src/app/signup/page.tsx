@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function SignUp() {
   const [name, setName] = useState('');
@@ -19,21 +18,42 @@ export default function SignUp() {
     setLoading(true);
     setError('');
     
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Update profile with name
-      if (name && userCredential.user) {
-        await updateProfile(userCredential.user, { displayName: name });
+    async function signUp() {
+      const { data, error: error1 } = await supabase.auth.signUp({ email, password });
+      if (error1) {
+        setError(`Failed to create account: ${error1.message}`);
+        return false;
       }
-      router.push('/dashboard'); // Redirect after successful signup
-    } catch (err: any) {
-      setError(err.message || 'Failed to create account');
-    } finally {
-      setLoading(false);
+      
+      // Check if we have a user and session
+      if (!data.user) {
+        setError('No user returned from signup');
+        return false;
+      }
+      
+      const { error: error2 } = await supabase
+        .from('Teacher')
+        .insert([{ id: data.user.id, name: name }])
+      if (error2) {
+        setError(`Failed to create account: ${error2.message}`);
+        return false;
+      }
+        
+      return true;
     }
+
+    const success = await signUp();
+    
+    // Only redirect if signup was successful AND we have a session
+    if (success) {
+      router.push('/dashboard');
+    }
+    
+    setLoading(false);
   };
   
   const handleGoogleSignUp = async () => {
+    /* TODO: fix
     setLoading(true);
     setError('');
     
@@ -46,6 +66,7 @@ export default function SignUp() {
     } finally {
       setLoading(false);
     }
+      */
   };
   
   return (
@@ -73,7 +94,7 @@ export default function SignUp() {
                 type="text"
                 autoComplete="name"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] focus:z-10 sm:text-sm"
                 placeholder="Full name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -87,7 +108,7 @@ export default function SignUp() {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -101,7 +122,7 @@ export default function SignUp() {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -113,7 +134,7 @@ export default function SignUp() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[var(--secondary)] hover:bg-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]"
             >
               {loading ? 'Creating account...' : 'Sign up'}
             </button>
@@ -134,7 +155,7 @@ export default function SignUp() {
             <button
               onClick={handleGoogleSignUp}
               disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]"
             >
               <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" width="24" height="24">
                 <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
@@ -152,7 +173,7 @@ export default function SignUp() {
         <div className="text-center mt-4">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
-            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <Link href="/login" className="font-medium text-[var(--secondary)] hover:text-[var(--primary)]">
               Sign in
             </Link>
           </p>
