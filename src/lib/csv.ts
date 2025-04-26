@@ -1,7 +1,7 @@
 'use server';
 
 import Papa from 'papaparse';
-import Student from '../../data/Student';
+import Student from '@/lib/data/Student';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 
