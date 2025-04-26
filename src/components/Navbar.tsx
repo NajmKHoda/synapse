@@ -1,23 +1,26 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { Brain, Menu, X } from 'lucide-react';
-import { auth } from '../lib/firebase'; // Import the auth instance
 import Button from './ui/Button';
+import { supabase } from '@/lib/supabase';
 
 const Navbar: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    // set initial session user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
     });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, []);
+    // listen for changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
@@ -33,11 +36,10 @@ const Navbar: React.FC = () => {
 
   const handleSignOut = async (): Promise<void> => {
     try {
-      await signOut(auth);
-      console.log('User signed out successfully');
-      setIsMobileMenuOpen(false); // Close mobile menu after sign out
+      await supabase.auth.signOut();
+      setIsMobileMenuOpen(false);
     } catch (error) {
-      console.error('Error signing out: ', error);
+      console.error('Error signing out:', error);
     }
   };
 

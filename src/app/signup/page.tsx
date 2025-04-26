@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function SignUp() {
   const [name, setName] = useState('');
@@ -19,21 +18,42 @@ export default function SignUp() {
     setLoading(true);
     setError('');
     
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Update profile with name
-      if (name && userCredential.user) {
-        await updateProfile(userCredential.user, { displayName: name });
+    async function signUp() {
+      const { data, error: error1 } = await supabase.auth.signUp({ email, password });
+      if (error1) {
+        setError(`Failed to create account: ${error1.message}`);
+        return false;
       }
-      router.push('/dashboard'); // Redirect after successful signup
-    } catch (err: any) {
-      setError(err.message || 'Failed to create account');
-    } finally {
-      setLoading(false);
+      
+      // Check if we have a user and session
+      if (!data.user) {
+        setError('No user returned from signup');
+        return false;
+      }
+      
+      const { error: error2 } = await supabase
+        .from('Teacher')
+        .insert([{ id: data.user.id, name: name }])
+      if (error2) {
+        setError(`Failed to create account: ${error2.message}`);
+        return false;
+      }
+        
+      return true;
     }
+
+    const success = await signUp();
+    
+    // Only redirect if signup was successful AND we have a session
+    if (success) {
+      router.push('/dashboard');
+    }
+    
+    setLoading(false);
   };
   
   const handleGoogleSignUp = async () => {
+    /* TODO: fix
     setLoading(true);
     setError('');
     
@@ -46,6 +66,7 @@ export default function SignUp() {
     } finally {
       setLoading(false);
     }
+      */
   };
   
   return (
