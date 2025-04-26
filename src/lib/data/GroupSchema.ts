@@ -20,8 +20,6 @@ export default class GroupSchema {
 
     static to_dto(schema: any) {
         return new Group(
-            schema.academic_strength,
-            schema.social_strength,
             schema.student_ids,
             schema.id,
             schema.grouping_report_id
