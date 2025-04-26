@@ -5,7 +5,7 @@ export default class Student {
     description: string;
     personality_vector: number[];
 
-    constructor(id: string, name: string, email: string, description: string, personality_vector: number[]) {
+    constructor(name: string, email: string, description: string, personality_vector: number[], id: string = "") {
         this.id = id;
         this.name = name;
         this.email = email;

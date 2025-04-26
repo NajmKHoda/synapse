@@ -9,7 +9,7 @@ export default class SynapseClass {
     name: string;
     gemini_context: string;
 
-    constructor(id: string, pairing_params: [number, number], students: Student[], assignments: Assignment[], name: string, gemini_context: string) {
+    constructor(pairing_params: [number, number], students: Student[], assignments: Assignment[], name: string, gemini_context: string, id: string = "") {
         this.id = id;
         this.pairing_params = pairing_params;
         this.students = students;

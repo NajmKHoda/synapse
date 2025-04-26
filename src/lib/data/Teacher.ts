@@ -5,7 +5,7 @@ export default class Teacher {
     name: string;
     classes: SynapseClass[];
 
-    constructor(id: string, name: string, classes: SynapseClass[]) {
+    constructor(name: string, classes: SynapseClass[], id: string = "") {
         this.id = id;
         this.name = name;
         this.classes = classes;
