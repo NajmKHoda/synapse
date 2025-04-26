@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { ArrowRight, Sparkles } from "lucide-react";
-import Button from './ui/Button';
+import Button from './ui/button';
 import { useAuthStatus } from "@/components/useAuthStatus";
 import Link from "next/link";
 
