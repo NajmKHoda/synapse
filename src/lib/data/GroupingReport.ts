@@ -6,6 +6,7 @@ export default class GroupingReport {
     assignment_id: string;
     groups: Group[];
     pairing_params: [number, number];
+    
     constructor(date: string, assignment_id: string, groups: Group[], pairing_params: [number, number], id: string = "") {
         this.id = id;
         this.date = date;
