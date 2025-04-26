@@ -1,13 +1,10 @@
-'use server';
-
 import Papa from 'papaparse';
 import z from 'zod';
+import { supabase } from './supabase';
 
-export default async function parseCSV(file: File) {
-    const serialFile = await file.text();
-
+export default async function parseCSV(file: File, classId: string) {
     const result = await new Promise<Papa.ParseResult<unknown>>((resolve, reject) => {
-        (Papa as any).parse(serialFile as string, {
+        (Papa as any).parse(file, {
             skipFirstNLines: 1,
             skipEmptyLines: true,
             complete: (r: any) => resolve(r),
@@ -22,20 +19,46 @@ export default async function parseCSV(file: File) {
         throw new Error(`CSV validation failed: ${(e as any).message}`)
     }
     
-    /*
-    const batch = writeBatch(db);
-    const colRef = collection(db, "students");
+    // Create assignment associated with CSV
+    const { data: assignments, error: assignmentError } = await supabase.from('Assignment')
+        .insert([{ name: file.name, class_id: classId, max_points: [], }])
+        .select();
 
-    rows.forEach(row => {
-        const docRef = doc(colRef);
-        const [name, email, ...scores] = row;
-        batch.set(docRef, { name, email, scores });
-    })
+    if (assignmentError) {
+        console.log('Failed to create assignment:', assignmentError);
+        return false;
+    }
+    const assignmentId = assignments[0].id;
 
-    await batch.commit();
-    */
+    // Create students associated with class from CSV
+    const { data: students, error: studentError } = await supabase.from('Student')
+        .insert(rows.map(r => ({
+            name: r[0],
+            email: r[1],
+            class_id: classId
+        })))
+        .select('name, id');
+    
+    if (studentError) {
+        console.log('Failed to create students:', studentError);
+        return false;
+    }
+    const studentIds = Object.fromEntries(students.map(s => [s.name, s.id]));
+    
+    // Create scores associated with students and assignment
+    const { error: scoreError } = await supabase.from('Score')
+        .insert(rows.map(r => ({
+            student_id: studentIds[r[0]],
+            assignment_id: assignmentId,
+            data: r.slice(2)
+        })));
+    
+    if (scoreError) {
+        console.log('Failed to create scores:', scoreError);
+        return false;
+    }
 
-    return result.data;
+    return true
 }
 
 const CSVSchema = z
