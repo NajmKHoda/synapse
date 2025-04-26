@@ -62,7 +62,7 @@ export default class Grouper {
                     const student = group[j];
                     const score = scores[students.findIndex((s) => s.id === student.id)];
                     avg_question_scores = avg_question_scores.map((s, idx) => s + score.question_scores[idx]);
-                    avg_personality_vec = avg_personality_vec.map((p, idx) => p + student.personality_vector[idx])
+                    avg_personality_vec = avg_personality_vec.map((p, idx) => p + student.personality_vector[idx]);
                 }
 
                 // Divide by current group size
@@ -73,21 +73,21 @@ export default class Grouper {
                 const matchRatings = [];
                 for (const student of copy_students) {
                     const score = scores[students.findIndex((s) => s.id === student.id)];
-                    const scoreDiff = this.mean_squared_difference(score.question_scores, avg_question_scores)
-                    const personalityDiff = this.mean_squared_difference(student.personality_vector, avg_personality_vec)
-                    matchRatings.push(alpha * scoreDiff + beta * (1 - personalityDiff))
+                    const scoreDiff = this.mean_squared_difference(score.question_scores, avg_question_scores);
+                    const personalityDiff = this.rbfSimilarity(student.personality_vector, avg_personality_vec);
+                    matchRatings.push(alpha * scoreDiff + beta * personalityDiff);
                 }
 
                 // Push highest and remove
-                const maxRatingIdx = matchRatings.indexOf(Math.max(...matchRatings))
-                group.push(copy_students[matchRatings.indexOf(maxRatingIdx)])
+                const maxRatingIdx = matchRatings.indexOf(Math.max(...matchRatings));
+                group.push(copy_students[matchRatings.indexOf(maxRatingIdx)]);
                 copy_students.splice(maxRatingIdx, 1);
             }
         }
 
         // Map back to Group objects and return
         return groups.map((s_arr) => new Group(s_arr.map((s) => s.id)))
-    }
+    };
 
     static mean_squared_difference(vector1: number[], vector2: number[]) {
         if (vector1.length !== vector2.length) {
@@ -102,4 +102,20 @@ export default class Grouper {
 
         return sum_squared_diff / vector1.length;
     };
+
+    static rbfSimilarity(vector1: number[], vector2: number[], gamma: number = 4.5) {
+        if (vector1.length !== vector2.length) {
+            throw new Error("Vectors must be of equal length");
+        }
+
+        let sum_squared_diff = 0;
+        for (let i = 0; i < vector1.length; i++) {
+            const diff = vector1[i] - vector2[i];
+            const squaredDiff = diff * diff;
+            sum_squared_diff += Math.exp(-gamma * squaredDiff);
+        }
+
+        return sum_squared_diff / vector1.length;
+    };
+      
 }
