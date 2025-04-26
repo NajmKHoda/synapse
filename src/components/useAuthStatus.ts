@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 interface AuthStatus {
@@ -43,7 +43,7 @@ export function useAuthStatus(): AuthStatus {
     checkInitialSession();
     
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       const user = session?.user;
       console.log("Auth state changed:", event, user ? "User logged in" : "User logged out");
       if (user) {
