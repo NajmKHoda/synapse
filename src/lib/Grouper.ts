@@ -8,7 +8,7 @@ import ScoreSchema from "./data/ScoreSchema";
 import StudentSchema from "./data/StudentSchema";
 
 export default class Grouper {
-    static async create_groups(group_size: number, alpha: number, beta: number, gemini_context: string, assignment: Assignment) {
+    static async create_groups_assignment(group_size: number, alpha: number, beta: number, assignment: Assignment) {
         // Get scores and students
         const scores = await ScoreSchema.get_by_assignment(assignment.id);
         if (scores === null) {
@@ -22,7 +22,10 @@ export default class Grouper {
             }
             students.push(StudentSchema.to_dto(studentSchema))
         }
+        return this.create_groups(group_size, alpha, beta, scores, students)
+    };
 
+    static create_groups(group_size: number, alpha: number, beta: number, scores: Score[], students: Student[]) {
         const num_groups = Math.round(students.length / group_size);
         const groups = [];
 
@@ -54,7 +57,7 @@ export default class Grouper {
                 const group = groups[i];
                 let avg_question_scores: number[] = [];
                 let avg_personality_vec: number[] = [];
-                avg_question_scores.fill(0, 0, assignment.max_scores.length);
+                avg_question_scores.fill(0, 0, scores[0].question_scores.length);
                 avg_personality_vec.fill(0, 0, students[0].personality_vector.length);
 
                 // Add score/personality vectors
