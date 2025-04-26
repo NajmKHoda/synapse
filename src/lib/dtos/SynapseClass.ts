@@ -1,12 +1,14 @@
 export default class SynapseClass {
-    pairing_params: [number, number];
+    alpha: number;
+    beta: number;
     name: string;
     gemini_context: string;
     id: number;
     teacher_id: number;
 
-    constructor(pairing_params: [number, number], name: string, gemini_context: string, id: number = -1, teacher_id: number = -1) {
-        this.pairing_params = pairing_params;
+    constructor(alpha: number, beta: number, name: string, gemini_context: string, id: number = -1, teacher_id: number = -1) {
+        this.alpha = alpha;
+        this.beta = beta;
         this.name = name;
         this.gemini_context = gemini_context;
         this.id = id;

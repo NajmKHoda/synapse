@@ -1,13 +1,15 @@
 export default class GroupingReport {
     date: string;
-    pairing_params: [number, number];
+    alpha: number;
+    beta: number;
     gemini_context: string;
     id: number;
     assignment_id: number;
 
-    constructor(date: string, pairing_params: [number, number], gemini_context: string, id: number = -1, assignment_id: number = -1) {
+    constructor(date: string, alpha: number, beta: number, gemini_context: string, id: number = -1, assignment_id: number = -1) {
         this.date = date;
-        this.pairing_params = pairing_params;
+        this.alpha = alpha;
+        this.beta = beta;
         this.gemini_context = gemini_context;
         this.id = id;
         this.assignment_id = assignment_id;
