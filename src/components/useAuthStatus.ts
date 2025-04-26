@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 interface AuthStatus {
   isLoggedIn: boolean;
@@ -18,50 +18,53 @@ export function useAuthStatus(): AuthStatus {
   });
 
   useEffect(() => {
-    // Make sure auth is initialized
-    if (!auth) {
-      console.error("Firebase auth is not initialized");
-      setStatus({
-        isLoggedIn: false,
-        loading: false,
-        user: null
-      });
-      return;
-    }
-
     console.log("Setting up auth state listener");
     
-    const unsubscribe = onAuthStateChanged(auth, 
-      (user) => {
-        console.log("Auth state changed:", user ? "User logged in" : "User logged out");
-        if (user) {
-          setStatus({
-            isLoggedIn: true,
-            loading: false,
-            user
-          });
-        } else {
-          setStatus({
-            isLoggedIn: false,
-            loading: false,
-            user: null
-          });
-        }
-      },
-      (error) => {
-        console.error("Auth state change error:", error);
+    // Check for existing session on mount
+    async function checkInitialSession() {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        console.log("Initial session found");
+        setStatus({
+          isLoggedIn: true,
+          loading: false,
+          user: data.session.user
+        });
+      } else {
+        console.log("No initial session found");
         setStatus({
           isLoggedIn: false,
           loading: false,
           user: null
         });
       }
-    );
+    }
+    
+    checkInitialSession();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const user = session?.user;
+      console.log("Auth state changed:", event, user ? "User logged in" : "User logged out");
+      if (user) {
+        setStatus({
+          isLoggedIn: true,
+          loading: false,
+          user
+        });
+      } else {
+        setStatus({
+          isLoggedIn: false,
+          loading: false,
+          user: null
+        });
+      }
+    });
 
     // Clean up subscription
     return () => {
       console.log("Cleaning up auth state listener");
-      unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 

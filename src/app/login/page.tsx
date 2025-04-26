@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -17,18 +16,20 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard'); // Redirect after successful login
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
-    } finally {
-      setLoading(false);
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+
+    if (error) {
+      setError(`Failed to sign in: ${error.message}`);
+      return;
     }
+
+    router.push('/dashboard'); // Redirect after successful login
   };
   
   const handleGoogleLogin = async () => {
+    /* TODO: fix
     setLoading(true);
     setError('');
     
@@ -41,6 +42,7 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+      */
   };
   
   return (

@@ -1,5 +1,5 @@
 "use client";
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStatus } from '@/components/useAuthStatus';
 
@@ -10,12 +10,14 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
   const { isLoggedIn, loading } = useAuthStatus();
+  const shouldRedirect = !loading && !isLoggedIn;
   
   // Redirect to login if not logged in
-  if (!loading && !isLoggedIn) {
-    router.push('/login');
-    return null;
-  }
+  useEffect(() => {
+    if (shouldRedirect) {
+      router.push('/login');
+    }
+  }, [shouldRedirect, router]);
 
   // Show loading state
   if (loading) {
@@ -24,6 +26,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Since justLoggedIn is not available, we can't use this feature
   // If you need this functionality, update useAuthStatus hook to provide justLoggedIn
+  if (shouldRedirect) return null;
 
   return children;
 }

@@ -8,11 +8,11 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html lang="en">
-            <Navbar />
             <body>
+                <Navbar />
                 {children}
+                <Footer />
             </body>
-            <Footer />
         </html>
     );
 }

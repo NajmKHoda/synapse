@@ -1,9 +1,6 @@
 'use server';
 
 import Papa from 'papaparse';
-import Student from '@/lib/data/Student';
-import { collection, doc, writeBatch } from 'firebase/firestore';
-import { db } from './firebase';
 import z from 'zod';
 
 export default async function parseCSV(file: File) {
@@ -25,6 +22,7 @@ export default async function parseCSV(file: File) {
         throw new Error(`CSV validation failed: ${(e as any).message}`)
     }
     
+    /*
     const batch = writeBatch(db);
     const colRef = collection(db, "students");
 
@@ -35,6 +33,7 @@ export default async function parseCSV(file: File) {
     })
 
     await batch.commit();
+    */
 
     return result.data;
 }
@@ -48,5 +47,5 @@ const CSVSchema = z
         const len = rows[0].length;
         return rows.every(r => r.length === len);
     }, { message: 'All rows must have the same number of columns' });
-    
+
 type CSVRow = z.infer<typeof CSVSchema>[number];
