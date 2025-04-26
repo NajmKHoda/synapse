@@ -31,9 +31,23 @@ import ProtectedRoute from "@/components/ProtectedRoute"
 interface ClassData {
   id: string
   name: string
-  studentCount?: number  // Make optional since we won't display it
   description: string
   color: string
+}
+
+// Color options from the CSS variables
+const colorOptions = [
+  "sunny",
+  "mint", 
+  "sky"
+];
+
+// Function to get a random color or consistent color based on class ID
+const getClassColor = (classId: string) => {
+  // This ensures the same class always gets the same color by using the ID's hash
+  const hash = classId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const colorIndex = hash % colorOptions.length;
+  return colorOptions[colorIndex];
 }
 
 export default function Dashboard() {
@@ -61,12 +75,12 @@ export default function Dashboard() {
     fetchClasses().then(cls => setClasses(cls));
   }, [user]);
 
-  async function handleClassAdd(name: string) {
+  async function handleClassAdd(name: string, description: string) {
     if (!user) return;
     console.log(user.id);
 
     const { data: instances, error } = await supabase.from('Class')
-      .insert([{ name }])
+      .insert([{ name, description }])
       .select();
 
     console.log(error);
@@ -74,7 +88,7 @@ export default function Dashboard() {
     if (!instances) return;
     const instance = instances[0];
 
-    setClasses([...classes, { id: instance.id, name: instance.name }])
+    setClasses([...classes, { id: instance.id, name: instance.name, description: instance.description }])
   };
 
   // Filter classes based on search query
@@ -88,7 +102,7 @@ export default function Dashboard() {
     name: string
     description: string
   }) => {
-    handleClassAdd(classData.name);
+    handleClassAdd(classData.name, classData.description);
     setIsAddClassDialogOpen(false);
   }
 
@@ -161,7 +175,7 @@ export default function Dashboard() {
                   key={cls.id}
                   className="border-none shadow-fun hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden"
                 >
-                  <div className={`h-2 bg-${cls.color} w-full`}></div>
+                  <div className={`h-2 bg-${getClassColor(cls.id)}`}></div>
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div className="rounded-full bg-[var(--primary)]/20 p-2">
@@ -169,20 +183,25 @@ export default function Dashboard() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button className="h-8 w-8 rounded-full">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
+                          <button 
+                            type="button"
+                            className="flex items-center justify-center h-9 w-9 rounded-full bg-transparent hover:bg-gray-100 transition-colors"
+                            aria-label="Open class menu"
+                          >
+                            <MoreHorizontal className="h-5 w-5 text-gray-600" />
+                          </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-lg">
-                          <DropdownMenuItem className="cursor-pointer">
+                        <DropdownMenuContent 
+                          align="end" 
+                          className="rounded-lg shadow-md z-50 bg-white border border-gray-200 py-1 min-w-[160px]"
+                          sideOffset={5}
+                        >
+                          {/* <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 px-3 py-2">
                             <Settings className="mr-2 h-4 w-4" /> Edit Class
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="cursor-pointer">
-                            <UserPlus className="mr-2 h-4 w-4" /> Add Students
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
+
                           <DropdownMenuItem
-                            className="cursor-pointer text-red-500 focus:text-red-500"
+                            className="cursor-pointer text-red-500 hover:bg-red-50 px-3 py-2"
                             onClick={() => openDeleteDialog(cls.id, cls.name)}
                           >
                             <Trash2 className="mr-2 h-4 w-4" /> Delete Class
@@ -195,16 +214,30 @@ export default function Dashboard() {
                     {cls.description && <p className="text-gray-600 text-sm mb-4 line-clamp-2">{cls.description}</p>}
                   </CardContent>
                   <CardFooter className="px-6 py-4 bg-gray-50 flex justify-between">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-gray-600 border-gray-200 hover:border-[var(--secondary)] hover:text-[var(--secondary)] rounded-lg"
+                    <Link
+                      href={`/dashboard/class/${cls.id}/upload`}
                     >
-                      View Details
-                    </Button>
-                    <Button size="sm" className={`bg-${cls.color} text-white hover:bg-${cls.color}/90 rounded-lg`}>
-                      Create Pairs
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-gray-600 border-gray-200 hover:border-[var(--secondary)] hover:text-[var(--secondary)] rounded-lg"
+                      >
+                        View Details
+                      </Button>
+                    </Link>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openDeleteDialog(cls.id, cls.name)}
+                        className="text-red-500 border-gray-200 hover:border-red-500 hover:bg-red-50 rounded-lg"
+                      >
+                        Delete
+                      </Button>
+                      <Button size="sm" className={`bg-${getClassColor(cls.id)} text-white hover:bg-${getClassColor(cls.id)}/90 rounded-lg`}>
+                        Create Pairs
+                      </Button>
+                    </div>
                   </CardFooter>
                 </Card>
               ))}

@@ -43,6 +43,12 @@ export const signInWithGoogle = async () => {
     }
   });
   
+  // Check if authentication was successful
+  if (data?.url) {
+    // Store a flag in localStorage to check after redirect
+    localStorage.setItem('checkTeacherRecord', 'true');
+  }
+  
   return { data, error };
 };
 
@@ -65,6 +71,35 @@ export const checkTeacherExists = async (userId: string) => {
     .single();
   
   return { exists: !!data, error };
+};
+
+// Add a new function to check and create teacher record after OAuth redirect
+export const checkAndCreateTeacherAfterAuth = async () => {
+  // Check if we need to verify teacher record
+  const shouldCheck = localStorage.getItem('checkTeacherRecord');
+  
+  if (shouldCheck) {
+    // Clear the flag
+    localStorage.removeItem('checkTeacherRecord');
+    
+    // Get current user
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (userData?.user) {
+      const userId = userData.user.id;
+      const { exists } = await checkTeacherExists(userId);
+      
+      if (!exists) {
+        // Get user's name from their profile
+        const userName = userData.user.user_metadata?.full_name || 
+                         userData.user.user_metadata?.name || 
+                         'Teacher';
+        
+        // Create teacher record
+        await createTeacherRecord(userId, userName);
+      }
+    }
+  }
 };
 
 export const signOut = async () => {
