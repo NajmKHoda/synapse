@@ -3,17 +3,19 @@ import { supabase } from "../supabase";
 
 export default class GroupRecordSchema {
     static async get_schema(id: number) {
-        return await supabase
+        let response = await supabase
             .from('GroupRecord')
             .select()
             .eq('id', id)
+        return response.data
     }
 
     static async get_by_assignment(assignment_id: number) {
-        return await supabase
+        let response = await supabase
             .from('GroupRecord')
             .select()
             .eq('assignment_id', assignment_id)
+        return response.data
     }
 
     static to_dto(schema: any) {

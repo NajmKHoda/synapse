@@ -3,17 +3,19 @@ import { supabase } from "../supabase";
 
 export default class AssignmentSchema {
     static async get_schema(id: number) {
-        return await supabase
+        let response = await supabase
             .from('Assignment')
             .select()
             .eq('id', id)
+        return response.data
     }
 
     static async get_by_class(class_id: number) {
-        return await supabase
+        let response = await supabase
             .from('Assignment')
             .select()
             .eq('class_id', class_id)
+        return response.data
     }
 
     static to_dto(schema: any) {
