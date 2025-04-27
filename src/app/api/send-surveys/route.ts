@@ -8,7 +8,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
-const resend = new Resend(process.env.RESEND_API_KEY!)
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 // Handler
 export async function POST(request: Request) {
@@ -23,7 +23,6 @@ export async function POST(request: Request) {
       .from('Student')
       .select('id, email, description')
       .eq('class_id', classId)
-      .or('description.is.null,description.eq.""')
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
@@ -36,32 +35,69 @@ export async function POST(request: Request) {
 
     // Compute your app’s base URL from the incoming request
     const origin = new URL(request.url).origin
+    console.log(`Origin: ${origin}`)
+    // Track email success/failures
+    let successCount = 0
+    let failureCount = 0
 
-    // Send each email and mark “emailed”
+    // Send each email and mark "emailed"
     await Promise.all(
       students.map(async (student) => {
         if (!student.email) return
-        console.log(`Sending email to ${student.email}`)
         const surveyLink = `${origin}/personality/student/${student.id}/form`
 
-        await resend.emails.send({
-          from:    'no-reply@ahmadwajid.com',    // your verified domain
-          to:      student.email,
-          subject: '🧠 Your Synapse Personality Assessment',
-          html: `
-            <p>Help us pair you up! Answer four quick questions and write one line about yourself:</p>
-            <a href="${surveyLink}">Start the assessment →</a>
-          `,
-        })
+        console.log(`Attempting to send email to ${student.email}...`)
+        
+        try { 
 
-        await supabase
-          .from('Student')
-          .update({ emailed: true })
-          .eq('id', student.id)
+          const emailResponse = await resend.emails.send({
+            from: 'no-reply@ahmadwajid.com',  // Proper format with name
+            to: `${student.email}`,
+            subject: '🧠 Your Synapse Personality Assessment',
+             html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2>Synapse Personality Assessment</h2>
+                <p>Help us pair you up! Answer four quick questions and write one line about yourself:</p>
+                <p style="margin: 25px 0;">
+                  <a href="${surveyLink}" style="background-color: #4CAF50; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                    Start the assessment →
+                  </a>
+                </p>
+                <p>If the button doesn't work, copy and paste this link into your browser:</p>
+                <p>${surveyLink}</p>
+                <p>Thank you!</p>
+              </div>
+            `,
+          })
+          
+          console.log(`✅ Email sent successfully to ${student.email}`, emailResponse.data)
+          
+          // Only mark as emailed if successful
+          await supabase
+            .from('Student')
+            .update({ emailed: true })
+            .eq('id', student.id)
+          
+          successCount++
+        } catch (emailError) {
+          console.error(`❌ Failed to send email to ${student.email}:`, emailError)
+          // Log more details about the error
+          if (emailError instanceof Error) {
+            console.error(`Error message: ${emailError.message}`)
+            console.error(`Error stack: ${emailError.stack}`)
+          }
+          failureCount++
+        }
       })
     )
 
-    return NextResponse.json({ count: students.length })
+    console.log(`Email sending complete. Success: ${successCount}, Failed: ${failureCount}`)
+
+    return NextResponse.json({ 
+      total: students.length,
+      sent: successCount,
+      failed: failureCount
+    })
 
   } catch (err) {
     console.error('Error sending surveys:', err)

@@ -58,18 +58,18 @@ export default function Dashboard() {
         return
       }
       
-      const { data: personalityData, error: personalityError } = await supabase
-        .from('Student')
-        .select('id, description')
-        .eq('class_id', classId)
+      // const { data: personalityData, error: personalityError } = await supabase
+      //   .from('Student')
+      //   .select('id, description')
+      //   .eq('class_id', classId)
       
-      if (personalityError) {
-        console.error('Error fetching personality data:', personalityError)
-      }
-      const completedAssessmentIds = new Set(
-        personalityData?.filter(item => item.description !== 0 && item.description !== '')?.map(item => item.student_id.toString())
-      )
-      const pending = data.filter(student => !completedAssessmentIds.has(student.id.toString())).length
+      // if (personalityError) {
+      //   console.error('Error fetching personality data:', personalityError)
+      // }
+      // const completedAssessmentIds = new Set(
+      //   personalityData?.filter(item => item.description !== 0 && item.description !== '')?.map(item => item.student_id)
+      // )
+      // const pending = data.filter(student => !completedAssessmentIds.has(student.id.toString())).length
 
       const formattedStudents = data.map(student => ({
         id: student.id,
