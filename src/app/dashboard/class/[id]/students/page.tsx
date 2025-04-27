@@ -158,10 +158,10 @@ export default function StudentsPage() {
                 <Button
                   onClick={sendAllAssessments}
                   className="bg-mint hover:bg-mint/90 text-white inline-flex items-center"
-                  disabled={sendingEmails || students.filter(s => s.email && !s.has_completed_assessment && !s.email_sent).length === 0}
+                  disabled={sendingEmails || students.filter(s => s.email && !s.has_completed_assessment).length === 0}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  Send All Surveys
+                  {students.some(s => s.email_sent) ? 'Resend Surveys' : 'Send All Surveys'}
                 </Button>
               </div>
               
