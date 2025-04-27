@@ -19,7 +19,7 @@ export default function Features() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 gap-8">
               <Card className="border-none shadow-fun hover:shadow-xl transition-all duration-300 rounded-2xl bg-sunny-light overflow-hidden">
                 <div className="h-2 bg-primary w-full"></div>
                 <CardHeader className="pb-2">
@@ -51,7 +51,7 @@ export default function Features() {
                   </CardDescription>
                 </CardContent>
               </Card>
-
+{/* 
               <Card className="border-none shadow-fun hover:shadow-xl transition-all duration-300 rounded-2xl bg-sky-light overflow-hidden">
                 <div className="h-2 bg-accent w-full"></div>
                 <CardHeader className="pb-2">
@@ -65,7 +65,7 @@ export default function Features() {
                     Track progress and outcomes of paired learning sessions with detailed analytics and insights.
                   </CardDescription>
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
           </div>
         </section>

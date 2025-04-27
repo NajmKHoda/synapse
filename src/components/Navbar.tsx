@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image"; // Added Image import
 import { useRouter, usePathname } from "next/navigation";
 import { getSession, signOut, getSupabase } from "@/lib/supabase";
 import { Session, User, AuthChangeEvent } from "@supabase/supabase-js";
@@ -58,8 +59,14 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-30 bg-white border-b shadow-sm">
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
-        <Link href="/" className="flex items-center gap-2">
-          <Brain className="h-6 w-6 text-[var(--mint)]" />
+        <Link href="/" className="flex items-center">
+          <Image 
+            src="/images/synapse.png" 
+            alt="Synapse Logo" 
+            width={48}
+            height={48}
+            className="brightness-0" 
+          />
           <span className="text-2xl font-bold text-gray-800">Synapse</span>
         </Link>
 
@@ -126,9 +133,15 @@ export default function Navbar() {
       >
         <div className="p-5">
           <div className="flex items-center justify-between mb-8">
-            <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-              <Brain className="h-6 w-6 text-[var(--mint)]" />
-              <span className="text-xl font-bold text-gray-800">Synapse</span>
+            <Link href="/" className="flex items-center">
+              <Image 
+                src="/images/synapse.png" 
+                alt="Synapse Logo" 
+                width={48}
+                height={48}
+                className="brightness-0" 
+              />
+              <span className="text-2xl font-bold text-gray-800">Synapse</span>
             </Link>
             <button onClick={toggleMenu} className="p-2 rounded-md" aria-label="Close menu">
               <X className="h-6 w-6 text-gray-700" />

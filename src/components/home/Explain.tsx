@@ -24,9 +24,9 @@ export default function Explain() {
                       <span className="text-gray-800 font-bold">1</span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold mb-2 text-gray-800">Input Student Profiles</h3>
+                      <h3 className="text-xl font-semibold mb-2 text-gray-800">Create a Class</h3>
                       <p className="text-gray-600">
-                        Teachers add student academic data and personality assessments to the platform.
+                        Once you sign up, create a class and upload a CSV with the student name, email and scores.
                       </p>
                     </div>
                   </div>
@@ -38,8 +38,7 @@ export default function Explain() {
                     <div>
                       <h3 className="text-xl font-semibold mb-2 text-gray-800">AI-Powered Matching</h3>
                       <p className="text-gray-600">
-                        Our algorithm analyzes the data to create optimal student pairings based on complementary skills
-                        and compatible personalities.
+                        Synapse uses AI to analyze the data and create optimal student pairings based on personalized instructions and other optional paramaters.  
                       </p>
                     </div>
                   </div>
@@ -49,9 +48,9 @@ export default function Explain() {
                       <span className="text-white font-bold">3</span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold mb-2 text-gray-800">Implement & Monitor</h3>
+                      <h3 className="text-xl font-semibold mb-2 text-gray-800">Groups</h3>
                       <p className="text-gray-600">
-                        Teachers implement the pairings in class and track progress through the Synapse dashboard.
+                        Once the groups are formed, you can view them in that classes page and the students groups can be regeneated at any time.
                       </p>
                     </div>
                   </div>
