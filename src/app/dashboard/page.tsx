@@ -234,9 +234,6 @@ export default function Dashboard() {
                       >
                         Delete
                       </Button>
-                      <Button size="sm" className={`bg-${getClassColor(cls.id)} text-white hover:bg-${getClassColor(cls.id)}/90 rounded-lg`}>
-                        Create Pairs
-                      </Button>
                     </div>
                   </CardFooter>
                 </Card>
