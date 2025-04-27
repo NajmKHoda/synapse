@@ -48,7 +48,7 @@ export function Hero() {
               variant="outline"
               className="border-gray-300 hover:border-[var(--accent)] hover:text-[var(--accent)] rounded-xl"
             >
-              Watch Demo
+              Demo
             </Button>
           </div>
         </div>

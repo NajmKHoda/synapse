@@ -36,8 +36,8 @@ export default function Dashboard() {
   const [pairingComplete, setPairingComplete] = useState(false)
   const [groups, setGroups] = useState<Group[]>([])
   const [pendingAssessments, setPendingAssessments] = useState(0)
-  const [personalityWeight, setPersonalityWeight] = useState(0.5)
-  const [scoreWeight, setScoreWeight] = useState(0.5)
+  const [personalityWeight, setPersonalityWeight] = useState(0.6)
+  const [scoreWeight, setScoreWeight] = useState(0.4)
   const [groupSize, setGroupSize] = useState(2)
   const [loadingGroups, setLoadingGroups] = useState(true)
 
@@ -274,7 +274,7 @@ export default function Dashboard() {
               
               <Card className="border-none shadow-fun rounded-2xl overflow-hidden">
                 <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-800 mb-4">Gemini Grouping</h2>
+                  <h2 className="text-xl font-semibold text-gray-800 mb-4">AI Grouping</h2>
                   
                   <div className="bg-gradient-to-br from-mint-light to-[var(--sunny)]/20 rounded-xl p-6">
                     {loadingGroups ? (
@@ -404,7 +404,7 @@ export default function Dashboard() {
                               className="text-xs border-mint/30 hover:bg-mint/10"
                               disabled={isPairing}
                             >
-                              <RefreshCw className={`h-3 w-3 mr-1 ${isPairing ? 'animate-spin' : ''}`} />
+                              <RefreshCw className={`inline-flex h-3 w-3 mr-1 ${isPairing ? 'animate-spin' : ''}`} />
                               Regenerate
                             </Button>
                             <Button 
@@ -437,7 +437,7 @@ export default function Dashboard() {
                                   <div 
                                     key={studentIndex} 
                                     className={`flex-1 min-w-[150px] p-3 ${
-                                      studentIndex % 2 === 0 ? 'bg-mint/10' : 'bg-[var(--sunny)]/10'
+                                      studentIndex % 2 === 0 ? 'bg-[var(--accent)]/10' : 'bg-[var(--sunny)]/10'
                                     } rounded-lg`}
                                   >
                                     <p className="text-xs text-gray-600 mb-1">Student {studentIndex + 1}</p>
@@ -447,10 +447,10 @@ export default function Dashboard() {
                                 ))}
                               </div>
                               
-                              <div className="text-sm text-gray-600">
+                              {/* <div className="text-sm text-gray-600">
                                 <p className="text-xs text-gray-500 mb-1">Why this works:</p>
-                                {group.reason}
-                              </div>
+                                \{group.reason\}
+                              </div> */}
                             </div>
                           ))}
 

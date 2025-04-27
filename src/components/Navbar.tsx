@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { getSession, signOut, getSupabase } from "@/lib/supabase";
 import { Session, User, AuthChangeEvent } from "@supabase/supabase-js";
 import { Brain, Menu, X } from "lucide-react";
@@ -12,6 +12,8 @@ export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const isLandingPage = pathname === "/";
 
   useEffect(() => {
     // Fetch initial session
@@ -63,12 +65,16 @@ export default function Navbar() {
 
         {/* Desktop nav links */}
         <nav className="hidden md:flex gap-6">
-          <Link href="#features" className="font-medium text-gray-600 hover:text-[var(--secondary)]">
-            Features
-          </Link>
-          <Link href="#how-it-works" className="font-medium text-gray-600 hover:text-[var(--secondary)]">
-            How It Works
-          </Link>
+          {isLandingPage && (
+            <>
+              <Link href="#features" className="font-medium text-gray-600 hover:text-[var(--secondary)]">
+                Features
+              </Link>
+              <Link href="#how-it-works" className="font-medium text-gray-600 hover:text-[var(--secondary)]">
+                How It Works
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Desktop auth buttons */}
@@ -130,12 +136,16 @@ export default function Navbar() {
           </div>
 
           <nav className="mb-8 space-y-4">
-            <Link href="#features" onClick={() => setMobileOpen(false)} className="block font-medium text-lg text-gray-700 hover:text-[var(--mint)]">
-              Features
-            </Link>
-            <Link href="#how-it-works" onClick={() => setMobileOpen(false)} className="block font-medium text-lg text-gray-700 hover:text-[var(--mint)]">
-              How It Works
-            </Link>
+            {isLandingPage && (
+              <>
+                <Link href="#features" onClick={() => setMobileOpen(false)} className="block font-medium text-lg text-gray-700 hover:text-[var(--mint)]">
+                  Features
+                </Link>
+                <Link href="#how-it-works" onClick={() => setMobileOpen(false)} className="block font-medium text-lg text-gray-700 hover:text-[var(--mint)]">
+                  How It Works
+                </Link>
+              </>
+            )}
           </nav>
 
           <div className="space-y-4">
