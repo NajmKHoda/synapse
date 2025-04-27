@@ -227,7 +227,7 @@ export default function Dashboard() {
                         size="sm" 
                         className="w-full mt-2 text-xs bg-sunny border-[var(--sunny)]/30 hover:bg-[var(--sunny)]/10"
                       >
-                        Manage Assessments
+                        Manage Surveys
                       </Button>
                     </Link>
                   </div>

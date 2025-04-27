@@ -151,7 +151,7 @@ export default function StudentsPage() {
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-800">Student Assessments</h1>
+                  <h1 className="text-2xl font-bold text-gray-800">Student Surveys</h1>
                   <p className="text-gray-600">Send personality assessments to your students</p>
                 </div>
                 
@@ -161,7 +161,7 @@ export default function StudentsPage() {
                   disabled={sendingEmails || students.filter(s => s.email && !s.has_completed_assessment && !s.email_sent).length === 0}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  Send All Assessments
+                  Send All Surveys
                 </Button>
               </div>
               
