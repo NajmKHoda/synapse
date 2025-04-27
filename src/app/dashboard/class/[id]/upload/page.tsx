@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Brain, User, Users, Sparkles, FileSpreadsheet } from "lucide-react"
+import { Brain, User, Users, Sparkles, FileSpreadsheet, RefreshCw } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import ProtectedRoute from "@/components/ProtectedRoute"
@@ -19,6 +19,12 @@ interface Student {
   email?: string;
 }
 
+interface Group {
+  id: number;
+  students: Student[];
+  reason: string;
+}
+
 export default function Dashboard() {
   const params = useParams()
   const router = useRouter()
@@ -28,8 +34,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false)
   const [isPairing, setIsPairing] = useState(false)
   const [pairingComplete, setPairingComplete] = useState(false)
-  const [pairs, setPairs] = useState<{student1: string, student2: string, reason: string}[]>([])
+  const [groups, setGroups] = useState<Group[]>([])
   const [pendingAssessments, setPendingAssessments] = useState(0)
+  const [personalityWeight, setPersonalityWeight] = useState(0.5)
+  const [scoreWeight, setScoreWeight] = useState(0.5)
+  const [groupSize, setGroupSize] = useState(2)
+  const [loadingGroups, setLoadingGroups] = useState(true)
 
   const fetchStudents = async () => {
     if (!classId) return
@@ -47,19 +57,16 @@ export default function Dashboard() {
       }
       
       const { data: personalityData, error: personalityError } = await supabase
-        .from('Student')  // Changed from 'Student' to 'PersonalityTest'
-        .select('student_id, description')
+        .from('Student')
+        .select('id, description')
         .eq('class_id', classId)
       
       if (personalityError) {
         console.error('Error fetching personality data:', personalityError)
       }
-      // If description is not 0 or empty then has completed assessment
       const completedAssessmentIds = new Set(
         personalityData?.filter(item => item.description !== 0 && item.description !== '')?.map(item => item.student_id.toString())
       )
-      // Filter students who have not completed the assessment
-      // and count them
       const pending = data.filter(student => !completedAssessmentIds.has(student.id.toString())).length
 
       const formattedStudents = data.map(student => ({
@@ -70,47 +77,126 @@ export default function Dashboard() {
       }))
       
       setStudents(formattedStudents)
+      
+      // Return the formatted students so we can use them in the caller
+      return formattedStudents
     } catch (err) {
       console.error('Failed to fetch students:', err)
     } finally {
       setLoading(false)
     }
+    return []
+  }
+
+  const fetchGroups = async (currentStudents = students) => {
+    if (!classId) return
+    
+    setLoadingGroups(true)
+    try {
+      console.log("Students in fetchGroups:", classId);
+      const { data, error } = await supabase
+        .from('Class')
+        .select('groups')
+        .eq('id', classId)
+      console.log("Data from fetchGroups:", data);
+      
+      if (error) {
+        console.error('Error fetching groups:', error);
+        return;
+      }
+      
+      // Check if we have groups data
+      if (data && data.length > 0 && data[0].groups) {
+        const groupsData = data[0].groups;
+        
+        // Format the groups data for display
+        const formattedGroups = groupsData.map((group, index) => {
+          // Find the full student objects that match these IDs
+          const groupStudents = group.map(studentId => 
+            currentStudents.find(s => s.id.toString() === studentId) || 
+            { id: studentId, name: `Student ${studentId.substring(0, 6)}...`, email: 'No data available' }
+          );
+          
+          return {
+            id: index + 1,
+            students: groupStudents,
+            reason: `Group ${index + 1} was created based on compatibility between the student profiles.`
+          };
+        });
+        
+        setGroups(formattedGroups);
+        setPairingComplete(true);
+      } else {
+        // No groups found
+        setPairingComplete(false);
+        setGroups([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch groups:', err);
+      setPairingComplete(false);
+      setGroups([]);
+    } finally {
+      setLoadingGroups(false);
+    }
   }
 
   useEffect(() => {
-    fetchStudents()
-  }, [classId])
+    const loadData = async () => {
+      const fetchedStudents = await fetchStudents();
+      if (fetchedStudents && fetchedStudents.length > 0) {
+        // Pass the freshly fetched students to fetchGroups
+        fetchGroups(fetchedStudents);
+      } else {
+        fetchGroups(); // Fallback to using the state
+      }
+    };
+    
+    loadData();
+  }, [classId]);
 
-  const handleUploadSuccess = () => {
-    fetchStudents()
+  const handleUploadSuccess = async () => {
+    const fetchedStudents = await fetchStudents();
+    if (fetchedStudents && fetchedStudents.length > 0) {
+      fetchGroups(fetchedStudents);
+    }
   }
 
-  const simulateGeminiPairing = () => {
+  const handleGenerateGroups = async () => {
     setIsPairing(true)
     
-    setTimeout(() => {
-      const samplePairs = [
-        {
-          student1: students[0]?.name || "Student 1", 
-          student2: students[1]?.name || "Student 2", 
-          reason: "Both have complementary strengths that can enhance collaboration"
-        },
-        {
-          student1: students[2]?.name || "Student 3", 
-          student2: students[3]?.name || "Student 4", 
-          reason: "Their skills complement each other well for project work"
-        }
-      ]
-      
-      setPairs(samplePairs)
+    try {
+      await group(classId, groupSize, personalityWeight, scoreWeight)
+      await fetchGroups()
+      setPairingComplete(true) // Set pairing complete after successful group generation
+    } catch (error) {
+      console.error('Error generating groups:', error)
+    } finally {
       setIsPairing(false)
-      setPairingComplete(true)
-    }, 3000)
+    }
   }
 
-  const resetPairing = () => {
-    setPairingComplete(false)
-    setPairs([])
+  const resetPairing = async () => {
+    if (!classId) return
+    
+    setIsPairing(true)
+    try {
+      // Delete from the correct table
+      const { error: deleteGroupsError } = await supabase
+        .from('StudentGroupJoin')
+        .delete()
+        .eq('class_id', classId)
+      
+      if (deleteGroupsError) {
+        console.error('Error deleting groups:', deleteGroupsError)
+      }
+      
+      setPairingComplete(false)
+      setGroups([])
+    } catch (err) {
+      console.error('Failed to reset groups:', err)
+    } finally {
+      setIsPairing(false)
+    }
   }
 
   return (
@@ -118,7 +204,6 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gradient-to-br from-sky-light via-white to-mint-light">
         <main className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Left Sidebar - Students */}
             <div className="w-full lg:w-1/4">
               <Card className="border-none shadow-fun rounded-2xl overflow-hidden h-full">
                 <CardContent className="p-6">
@@ -128,7 +213,17 @@ export default function Dashboard() {
                       {students.length}
                     </span>
                   </div>
-                  
+                  <div className="p-3 mb-4 rounded-lg border ">
+                    <Link href={`/dashboard/class/${classId}/students`}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full mt-2 text-xs bg-sunny border-[var(--sunny)]/30 hover:bg-[var(--sunny)]/10"
+                      >
+                        Manage Assessments
+                      </Button>
+                    </Link>
+                  </div>
                   <div className="space-y-3 max-h-[calc(100vh-240px)] overflow-y-auto pr-2">
                     {loading ? (
                       <div className="flex justify-center p-6">
@@ -136,23 +231,6 @@ export default function Dashboard() {
                       </div>
                     ) : students.length > 0 ? (
                       <>
-                        {pendingAssessments > 0 && (
-                          <div className="p-3 mb-4 bg-[var(--sunny)]/10 rounded-lg border border-[var(--sunny)]/20">
-                            <p className="text-sm text-gray-700">
-                              <span className="font-medium">{pendingAssessments}</span> student(s) haven't completed the personality assessment
-                            </p>
-                            <Link href={`/dashboard/class/${classId}/students`}>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full mt-2 text-xs border-[var(--sunny)]/30 hover:bg-[var(--sunny)]/10"
-                              >
-                                Manage Assessments
-                              </Button>
-                            </Link>
-                          </div>
-                        )}
-                      
                         {students.map((student) => (
                           <div 
                             key={student.id} 
@@ -179,27 +257,11 @@ export default function Dashboard() {
                       </div>
                     )}
                   </div>
-                  
-                  {students.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <Link href={`/dashboard/class/${classId}/students`}>
-                        <Button 
-                          variant="outline" 
-                          className="w-full text-sm border-mint/30 hover:bg-mint/10 text-mint"
-                        >
-                          <FileSpreadsheet className="h-4 w-4 mr-2 inline-flex" />
-                          Manage Students
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             </div>
             
-            {/* Right Side Content */}
             <div className="w-full lg:w-3/4 flex flex-col gap-6">
-              {/* CSV Upload Section */}
               <Card className="border-none shadow-fun rounded-2xl overflow-hidden">
                 <CardContent className="p-6">
                   <h2 className="text-xl font-semibold text-gray-800 mb-4">Upload Student Data</h2>
@@ -210,13 +272,17 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
               
-              {/* Gemini Pairing Section */}
               <Card className="border-none shadow-fun rounded-2xl overflow-hidden">
                 <CardContent className="p-6">
                   <h2 className="text-xl font-semibold text-gray-800 mb-4">Gemini Grouping</h2>
                   
                   <div className="bg-gradient-to-br from-mint-light to-[var(--sunny)]/20 rounded-xl p-6">
-                    {!pairingComplete ? (
+                    {loadingGroups ? (
+                      <div className="flex flex-col items-center justify-center text-center py-8">
+                        <Progress value={70} className="h-2 mb-4 w-48" />
+                        <p className="text-mint text-sm animate-pulse">Loading student groups...</p>
+                      </div>
+                    ) : !pairingComplete ? (
                       <div className="flex flex-col items-center justify-center text-center">
                         <div className="h-16 w-16 rounded-full bg-mint/20 flex items-center justify-center mb-4">
                           <Brain className="h-8 w-8 text-mint" />
@@ -227,36 +293,133 @@ export default function Dashboard() {
                           learning styles, and personality traits.
                         </p>
                         
+                        <div className="w-full max-w-md mb-6 space-y-5">
+                          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                            <div className="flex justify-between mb-2">
+                              <label className="text-sm font-medium text-gray-700">Group Size</label>
+                              <span className="text-sm bg-gray-100 text-gray-800 px-2 py-0.5 rounded-md">{groupSize}</span>
+                            </div>
+                            <input 
+                              type="text" 
+                              value={groupSize}
+                              onChange={(e) => {
+                                if (e.target.value === '') {
+                                  setGroupSize('' as any);
+                                  return;
+                                }
+                                
+                                const inputValue = parseInt(e.target.value);
+                                if (!isNaN(inputValue)) {
+                                  if (inputValue < 2) {
+                                    setGroupSize(2);
+                                  } else if (inputValue > students.length) {
+                                    setGroupSize(students.length);
+                                  } else {
+                                    setGroupSize(inputValue);
+                                  }
+                                }
+                              }}
+                              onBlur={(e) => {
+                                let inputValue = parseInt(e.target.value as string);
+                                
+                                if (isNaN(inputValue) || inputValue < 2) {
+                                  setGroupSize(2);
+                                } else if (inputValue > students.length) {
+                                  setGroupSize(students.length);
+                                } else {
+                                  setGroupSize(inputValue);
+                                }
+                              }}
+                              className="w-full p-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-mint focus:border-transparent"
+                            />
+                            <div className="flex justify-between mt-1">
+                              <span className="text-xs text-gray-500">Min: 2</span>
+                              <span className="text-xs text-gray-500">Max: {students.length}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                            <div className="flex justify-between mb-2">
+                              <label className="text-sm font-medium text-gray-700">Personality Weight</label>
+                              <span className="text-sm bg-mint/20 text-mint px-2 py-0.5 rounded-md">{(personalityWeight * 100).toFixed(0)}%</span>
+                            </div>
+                            <input 
+                              type="range" 
+                              min="0" 
+                              max="1" 
+                              step="0.1" 
+                              value={personalityWeight}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                setPersonalityWeight(value);
+                              }}
+                              className="w-full h-2 bg-[var(--mint)]/20 rounded-lg appearance-none cursor-pointer accent-[var(--accent)]"
+                            />
+                          </div>
+                          
+                          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                            <div className="flex justify-between mb-2">
+                              <label className="text-sm font-medium text-gray-700">Score Weight</label>
+                              <span className="text-sm bg-[var(--sunny)]/20 text-[var(--sunny)] px-2 py-0.5 rounded-md">{(scoreWeight * 100).toFixed(0)}%</span>
+                            </div>
+                            <input 
+                              type="range" 
+                              min="0" 
+                              max="1" 
+                              step="0.1" 
+                              value={scoreWeight}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                setScoreWeight(value);
+                              }}
+                              className="w-full h-2 bg-[var(--sunny)]/20 rounded-lg appearance-none cursor-pointer accent-[var(--sunny)]"
+                            />
+                          </div>
+                        </div>
+                        
                         {isPairing ? (
                           <div className="w-full max-w-md">
                             <Progress value={70} className="h-2 mb-2" />
-                            <p className="text-mint text-sm animate-pulse">Generating optimal student pairs...</p>
+                            <p className="text-mint text-sm animate-pulse">Generating optimal student groups...</p>
                           </div>
                         ) : (
                           <Button 
-                            onClick={() => group(classId, 5, 0.5, 0.5)}
+                            onClick={handleGenerateGroups}
                             className="bg-mint hover:bg-mint/90 text-white"
+                            disabled={students.length < groupSize}
                           >
                             <Sparkles className="h-4 w-4 mr-2 inline-flex" />
-                            Generate Pairs
+                            Generate Groups
                           </Button>
                         )}
                       </div>
                     ) : (
                       <div>
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-medium text-gray-800">Generated Pairs</h3>
-                          <Button 
-                            variant="outline" 
-                            onClick={resetPairing}
-                            className="text-xs border-mint/30 hover:bg-mint/10"
-                          >
-                            Reset
-                          </Button>
+                          <h3 className="text-lg font-medium text-gray-800">Generated Groups</h3>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              onClick={handleGenerateGroups}
+                              className="text-xs border-mint/30 hover:bg-mint/10"
+                              disabled={isPairing}
+                            >
+                              <RefreshCw className={`h-3 w-3 mr-1 ${isPairing ? 'animate-spin' : ''}`} />
+                              Regenerate
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              onClick={resetPairing}
+                              className="text-xs border-mint/30 hover:bg-mint/10"
+                              disabled={isPairing}
+                            >
+                              Reset
+                            </Button>
+                          </div>
                         </div>
                         
                         <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2">
-                          {pairs.map((pair, index) => (
+                          {groups.map((group, index) => (
                             <div 
                               key={index}
                               className="bg-white rounded-lg p-4 border border-mint/30 shadow-sm"
@@ -264,28 +427,38 @@ export default function Dashboard() {
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <span className="bg-mint/20 text-mint text-xs font-medium px-2 py-1 rounded-full">
-                                    Pair {index + 1}
+                                    Group {index + 1}
                                   </span>
                                 </div>
                               </div>
                               
-                              <div className="flex flex-col sm:flex-row gap-4 mb-3">
-                                <div className="flex-1 p-3 bg-mint/10 rounded-lg">
-                                  <p className="text-xs text-mint mb-1">Student 1</p>
-                                  <p className="font-medium text-gray-800">{pair.student1}</p>
-                                </div>
-                                <div className="flex-1 p-3 bg-[var(--sunny)]/10 rounded-lg">
-                                  <p className="text-xs text-[var(--sunny)] mb-1">Student 2</p>
-                                  <p className="font-medium text-gray-800">{pair.student2}</p>
-                                </div>
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {group.students.map((student, studentIndex) => (
+                                  <div 
+                                    key={studentIndex} 
+                                    className={`flex-1 min-w-[150px] p-3 ${
+                                      studentIndex % 2 === 0 ? 'bg-mint/10' : 'bg-[var(--sunny)]/10'
+                                    } rounded-lg`}
+                                  >
+                                    <p className="text-xs text-gray-600 mb-1">Student {studentIndex + 1}</p>
+                                    <p className="font-medium text-gray-800">{student.name}</p>
+                                    {student.email && <p className="text-xs text-gray-500">{student.email}</p>}
+                                  </div>
+                                ))}
                               </div>
                               
                               <div className="text-sm text-gray-600">
                                 <p className="text-xs text-gray-500 mb-1">Why this works:</p>
-                                {pair.reason}
+                                {group.reason}
                               </div>
                             </div>
                           ))}
+
+                          {groups.length === 0 && !loadingGroups && (
+                            <div className="text-center p-6 bg-white rounded-lg">
+                              <p className="text-gray-500">No groups have been generated yet</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

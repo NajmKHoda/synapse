@@ -214,7 +214,7 @@ export default function SignUp() {
             </button>
           </div>
         </form>
-
+{/* 
         <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -231,14 +231,12 @@ export default function SignUp() {
               disabled={loading}
               className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]"
             >
-              {/* Google SVG icon unchanged */}
               <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" width="24" height="24">
-                {/* paths... */}
               </svg>
               {loading ? 'Redirecting...' : 'Sign up with Google'}
             </button>
           </div>
-        </div>
+        </div> */}
 
         <div className="text-center mt-4">
           <p className="text-sm text-gray-600">

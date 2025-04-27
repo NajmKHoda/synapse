@@ -64,7 +64,7 @@ export async function group(classId: string, groupSize: number, alpha: number, b
 
     const groupStuff = groups.map(g => g.map(s => s.id));
     const { error: groupError } = await supabase.from('Class')
-        .update({ group: groupStuff })
+        .update({ groups: groupStuff })
         .eq('id', classId);
 
     if (groupError) {
