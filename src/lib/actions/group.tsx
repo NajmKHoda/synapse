@@ -25,7 +25,7 @@ export async function group(classId: string, groupSize: number, alpha: number, b
 
     // Get persona vectors
     const students = await generateStudentVectors(classId, assignment.id);
-    const num_groups = Math.round(students.length / groupSize);
+    const num_groups = Math.floor(students.length / groupSize);
 
     const groups: StudentVectors[][] = [];
 
@@ -42,6 +42,7 @@ export async function group(classId: string, groupSize: number, alpha: number, b
     }
 
     // Loop until all students have been removed from the array copy
+    const groupMatchRatings = new Array(num_groups).fill(0) as number[];
     while (studentsLeft.length > 0) {
         for (let i = 0; i < num_groups; i++) {
             if (studentsLeft.length === 0) {
@@ -55,14 +56,26 @@ export async function group(classId: string, groupSize: number, alpha: number, b
                 matchRatings.push(studentDiff(studentVec, group[group.length - 1], alpha, beta));
             }
 
+            const maxRating = Math.max(...matchRatings);
+            groupMatchRatings[i] += maxRating;
+
             // Push highest and remove
-            const maxRatingIdx = matchRatings.indexOf(Math.max(...matchRatings));
+            const maxRatingIdx = matchRatings.indexOf(maxRating);
             group.push(studentsLeft[maxRatingIdx]);
             studentsLeft.splice(maxRatingIdx, 1);
         }
     }
 
-    const groupStuff = groups.map(g => g.map(s => s.id));
+    // Take average
+    groupMatchRatings.forEach((r, i, arr) => {
+        arr[i] = r / groups[i].length;
+    });
+
+    const groupStuff = groups.map((g, i) => ({
+        score: groupMatchRatings[i],
+        ids: g.map(s => s.id)
+    }));
+
     const { error: groupError } = await supabase.from('Class')
         .update({ groups: groupStuff })
         .eq('id', classId);
