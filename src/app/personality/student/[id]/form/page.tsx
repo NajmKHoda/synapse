@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import Button from "@/components/ui/Button"
 import { supabase } from "@/lib/supabase"
-import { Loader2, CheckCircle2 } from "lucide-react"
+import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react"
 
 export default function PersonalityForm() {
   const params = useParams()
@@ -25,7 +25,6 @@ export default function PersonalityForm() {
     idealPartner: ""
   })
 
-  // Define question texts for use in the description
   const questions = {
     question1: {
       text: "When working with others, I prefer to:",
@@ -56,23 +55,18 @@ export default function PersonalityForm() {
     }
   }
   
-  // Function to format personality data as a description string
   const formatPersonalityDescription = () => {
     let description = "";
     
-    // Add question 1
     description += `1. ${questions.question1.text}\n`;
     description += `   Answer: ${formData.question1}) ${questions.question1.options[formData.question1 as keyof typeof questions.question1.options]}\n\n`;
     
-    // Add question 2
     description += `2. ${questions.question2.text}\n`;
     description += `   Answer: ${formData.question2}) ${questions.question2.options[formData.question2 as keyof typeof questions.question2.options]}\n\n`;
     
-    // Add question 3
     description += `3. ${questions.question3.text}\n`;
     description += `   Answer: ${formData.question3}) ${questions.question3.options[formData.question3 as keyof typeof questions.question3.options]}\n\n`;
     
-    // Add ideal partner description
     description += `4. Ideal Study Partner Description:\n   ${formData.idealPartner}\n`;
     
     return description;
@@ -85,7 +79,6 @@ export default function PersonalityForm() {
       setLoading(true)
       
       try {
-        // Fetch student details including description
         const { data: studentData, error: studentError } = await supabase
           .from('Student')
           .select('id, name, description')
@@ -99,7 +92,6 @@ export default function PersonalityForm() {
         
         setStudent(studentData)
         
-        // Check if student has already completed the personality form by checking if description exists
         if (studentData.description) {
           setAlreadyCompleted(true)
         }
@@ -127,14 +119,12 @@ export default function PersonalityForm() {
     setSubmitting(true)
     
     try {
-      // Format the description using the personality data
       const description = formatPersonalityDescription();
       
-      // Update the Student table directly with the description
       const { error } = await supabase
         .from('Student')
         .update({
-          description: description // Add the formatted description to the student record
+          description: description
         })
         .eq('id', studentId)
       
@@ -145,9 +135,8 @@ export default function PersonalityForm() {
       
       setSubmitted(true)
       
-      // Redirect to the student profile after a short delay
       setTimeout(() => {
-        router.push(`/student/${studentId}`)
+        router.push(`/`)
       }, 2000)
       
     } catch (err) {
@@ -167,13 +156,13 @@ export default function PersonalityForm() {
   
   if (!student) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-light via-white to-mint-light">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-light via-white to-mint-light p-4">
         <Card className="border-none shadow-fun rounded-2xl overflow-hidden max-w-md w-full">
           <CardContent className="p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Student Not Found</h2>
             <p className="text-gray-600 mb-4">Sorry, we couldn't find this student in our system.</p>
-            <Button onClick={() => router.push('/')} className="w-full bg-mint hover:bg-mint/90 text-white">
-              Go Home
+            <Button onClick={() => router.push('/')} className="w-full bg-mint hover:bg-mint/90 text-white flex items-center justify-center">
+              <ArrowLeft className="h-4 w-4 mr-2" /> Return Home
             </Button>
           </CardContent>
         </Card>
@@ -187,13 +176,15 @@ export default function PersonalityForm() {
         <Card className="border-none shadow-fun rounded-2xl overflow-hidden max-w-md w-full">
           <CardContent className="p-6">
             <div className="flex flex-col items-center text-center">
-              <CheckCircle2 className="h-12 w-12 text-mint mb-4" />
+              <div className="h-16 w-16 rounded-full bg-mint/20 flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-8 w-8 text-mint" />
+              </div>
               <h2 className="text-xl font-semibold text-gray-800 mb-2">Already Completed</h2>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 mb-6">
                 You have already completed the personality assessment. Thank you for your participation!
               </p>
-              <Button onClick={() => router.push('/')} className="bg-mint hover:bg-mint/90 text-white">
-                Return to Homepage
+              <Button onClick={() => router.push('/')} className="bg-mint hover:bg-mint/90 text-white flex items-center">
+                <ArrowLeft className="h-4 w-4 mr-2" /> Return to Homepage
               </Button>
             </div>
           </CardContent>
@@ -208,16 +199,18 @@ export default function PersonalityForm() {
         <Card className="border-none shadow-fun rounded-2xl overflow-hidden max-w-md w-full">
           <CardContent className="p-6">
             <div className="flex flex-col items-center text-center">
-              <CheckCircle2 className="h-12 w-12 text-mint mb-4" />
+              <div className="h-16 w-16 rounded-full bg-mint/20 flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-8 w-8 text-mint" />
+              </div>
               <h2 className="text-xl font-semibold text-gray-800 mb-2">Thank You!</h2>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 mb-2">
                 Your personality assessment has been submitted successfully. This will help us match you with compatible study partners.
               </p>
-              <p className="text-gray-600 mb-4">
-                Redirecting to your profile...
+              <p className="text-mint text-sm mb-6">
+                Redirecting to your home...
               </p>
-              <Button onClick={() => router.push(`/student/${studentId}`)} className="bg-mint hover:bg-mint/90 text-white">
-                Go to Profile
+              <Button onClick={() => router.push('/')} className="bg-mint hover:bg-mint/90 text-white">
+                Go to Home
               </Button>
             </div>
           </CardContent>
@@ -227,18 +220,22 @@ export default function PersonalityForm() {
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-light via-white to-mint-light py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-sky-light via-white to-mint-light py-12 px-4">
       <div className="container mx-auto max-w-2xl">
         <Card className="border-none shadow-fun rounded-2xl overflow-hidden">
-          <CardContent className="p-6">
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">Student Personality Assessment</h1>
-            <p className="text-gray-600 mb-6">
-              Hello, {student.name}! Please complete this short assessment to help us match you with compatible study partners.
-            </p>
+          <CardContent className="p-8">
+            <div className="mb-8 text-center">
+              <div className="mx-auto w-16 h-16 bg-mint/20 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-8 w-8 text-mint" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">Student Personality Assessment</h1>
+              <p className="text-gray-600 max-w-md mx-auto">
+                Hello, <span className="text-mint font-medium">{student.name}</span>! Complete this short assessment to help us match you with compatible study partners.
+              </p>
+            </div>
             
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Question 1 */}
-              <div className="space-y-4">
+              <div className="space-y-5 bg-sky-light/30 p-6 rounded-xl border border-sky-light">
                 <h3 className="text-lg font-medium text-gray-800">1. When working with others, I prefer to:</h3>
                 <div className="space-y-3">
                   {[
@@ -247,26 +244,41 @@ export default function PersonalityForm() {
                     { value: "C", label: "Support others and follow instructions" },
                     { value: "D", label: "Work independently and check in when needed" }
                   ].map((option) => (
-                    <label key={option.value} className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-mint/50 cursor-pointer">
+                    <label 
+                      key={option.value} 
+                      className={`flex items-start gap-3 p-4 rounded-lg border transition-all ${
+                        formData.question1 === option.value 
+                          ? "border-mint bg-mint/10 shadow-sm" 
+                          : "border-gray-200 hover:border-mint/50 bg-white"
+                      } cursor-pointer`}
+                    >
+                      <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 ${
+                        formData.question1 === option.value
+                          ? "border-mint bg-mint" 
+                          : "border-gray-300"
+                      }`}>
+                        {formData.question1 === option.value && (
+                          <div className="h-2 w-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-800">{option.value})</span> {option.label}
+                      </div>
                       <input
                         type="radio"
                         name="question1"
                         value={option.value}
                         checked={formData.question1 === option.value}
                         onChange={handleInputChange}
-                        className="mt-1"
+                        className="sr-only"
                         required
                       />
-                      <div>
-                        <span className="font-medium text-gray-800">{option.value})</span> {option.label}
-                      </div>
                     </label>
                   ))}
                 </div>
               </div>
               
-              {/* Question 2 */}
-              <div className="space-y-4">
+              <div className="space-y-5 bg-mint-light/30 p-6 rounded-xl border border-mint-light">
                 <h3 className="text-lg font-medium text-gray-800">2. In a study partner, I value most:</h3>
                 <div className="space-y-3">
                   {[
@@ -275,26 +287,41 @@ export default function PersonalityForm() {
                     { value: "C", label: "Creativity and problem-solving skills" },
                     { value: "D", label: "Patience and willingness to explain concepts" }
                   ].map((option) => (
-                    <label key={option.value} className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-mint/50 cursor-pointer">
+                    <label 
+                      key={option.value} 
+                      className={`flex items-start gap-3 p-4 rounded-lg border transition-all ${
+                        formData.question2 === option.value 
+                          ? "border-mint bg-mint/10 shadow-sm" 
+                          : "border-gray-200 hover:border-mint/50 bg-white"
+                      } cursor-pointer`}
+                    >
+                      <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 ${
+                        formData.question2 === option.value
+                          ? "border-mint bg-mint" 
+                          : "border-gray-300"
+                      }`}>
+                        {formData.question2 === option.value && (
+                          <div className="h-2 w-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-800">{option.value})</span> {option.label}
+                      </div>
                       <input
                         type="radio"
                         name="question2"
                         value={option.value}
                         checked={formData.question2 === option.value}
                         onChange={handleInputChange}
-                        className="mt-1"
+                        className="sr-only"
                         required
                       />
-                      <div>
-                        <span className="font-medium text-gray-800">{option.value})</span> {option.label}
-                      </div>
                     </label>
                   ))}
                 </div>
               </div>
               
-              {/* Question 3 */}
-              <div className="space-y-4">
+              <div className="space-y-5 bg-sky-light/30 p-6 rounded-xl border border-sky-light">
                 <h3 className="text-lg font-medium text-gray-800">3. When approaching a new or hard topic, I usually:</h3>
                 <div className="space-y-3">
                   {[
@@ -303,26 +330,41 @@ export default function PersonalityForm() {
                     { value: "C", label: "Ask questions early and often" },
                     { value: "D", label: "Plan a step-by-step approach carefully before starting" }
                   ].map((option) => (
-                    <label key={option.value} className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-mint/50 cursor-pointer">
+                    <label 
+                      key={option.value} 
+                      className={`flex items-start gap-3 p-4 rounded-lg border transition-all ${
+                        formData.question3 === option.value 
+                          ? "border-mint bg-mint/10 shadow-sm" 
+                          : "border-gray-200 hover:border-mint/50 bg-white"
+                      } cursor-pointer`}
+                    >
+                      <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 ${
+                        formData.question3 === option.value
+                          ? "border-mint bg-mint" 
+                          : "border-gray-300"
+                      }`}>
+                        {formData.question3 === option.value && (
+                          <div className="h-2 w-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-800">{option.value})</span> {option.label}
+                      </div>
                       <input
                         type="radio"
                         name="question3"
                         value={option.value}
                         checked={formData.question3 === option.value}
                         onChange={handleInputChange}
-                        className="mt-1"
+                        className="sr-only"
                         required
                       />
-                      <div>
-                        <span className="font-medium text-gray-800">{option.value})</span> {option.label}
-                      </div>
                     </label>
                   ))}
                 </div>
               </div>
               
-              {/* Text Box */}
-              <div className="space-y-3">
+              <div className="space-y-4 bg-mint-light/30 p-6 rounded-xl border border-mint-light">
                 <h3 className="text-lg font-medium text-gray-800">
                   Tell us in 1–2 sentences: What's your ideal study partner like, and how do you usually like to work on schoolwork?
                 </h3>
@@ -332,23 +374,26 @@ export default function PersonalityForm() {
                   onChange={handleInputChange}
                   required
                   rows={4}
-                  className="w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-mint/50"
+                  className="w-full p-4 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-mint/50 focus:border-transparent resize-none shadow-sm"
                   placeholder="Describe your ideal study partner..."
                 />
               </div>
               
               <Button 
                 type="submit" 
-                className="w-full bg-mint hover:bg-mint/90 text-white p-3 rounded-lg"
+                className="w-full bg-mint hover:bg-mint/90 text-white p-4 rounded-lg text-lg font-medium shadow-md hover:shadow-lg transition-all"
                 disabled={submitting}
               >
                 {submitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Submitting...
-                  </>
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Submitting...</span>
+                  </div>
                 ) : (
-                  'Submit Assessment'
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span>Submit Assessment</span>
+                  </div>
                 )}
               </Button>
             </form>
