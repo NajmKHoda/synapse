@@ -52,15 +52,77 @@ export function Hero() {
             </Button>
           </div>
         </div>
-        <div className="relative h-[400px] rounded-2xl overflow-hidden shadow-fun animate-float">
-          <div className="absolute inset-0 bg-gradient-to-tr from-[var(--primary)]/20 via-transparent to-[var(--accent)]/20 z-10"></div>
-          <Image
-            src="/images/heroholder.png"
-            alt="Students collaborating"
-            fill
-            className="object-cover"
-          />
-        </div>
+        <div className="relative h-[300px] lg:h-[500px] mx-auto lg:mx-0 max-w-[600px] w-full">
+                {/* Background decorative elements */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] rounded-full bg-gradient-to-tr from-primary/10 via-secondary/5 to-accent/10 blur-xl"></div>
+
+                {/* First image - Configuration Interface */}
+                <div
+  className="
+    absolute
+      top-[5%]
+      right-[5%]        /* default small screens */
+      md:right-[12%]    /* pull  in on md */
+      lg:right-[5%]     /* reset on lg+ */
+    w-[60%]
+      md:w-[70%]        /* a bit wider on md so it fills more space */
+      lg:w-[65%]
+    h-auto
+    rounded-2xl
+    overflow-hidden
+    shadow-fun
+    animate-float
+    z-20
+    border-4
+    border-white
+  "
+>
+  <Image
+    src="/images/generate.png"
+    alt="AI-Powered Grouping Interface"
+    width={600}
+    height={800}
+    className="object-cover w-full h-full"
+  />
+</div>
+
+{/* Second image – Generated Groups */}
+<div
+  className="
+    absolute
+      bottom-[5%]
+      left-[5%]
+      md:left-[12%]
+      lg:left-[5%]
+    w-[60%]
+      md:w-[70%]
+      lg:w-[65%]
+    h-auto
+    rounded-2xl
+    overflow-hidden
+    shadow-fun
+    animate-float
+    animation-delay-700
+    z-10
+    border-4
+    border-white
+  "
+>
+  <Image
+    src="/images/generated.png"
+    alt="Generated Student Groups"
+    width={600}
+    height={400}
+    className="object-cover w-full h-full"
+  />
+</div>
+
+
+                {/* Decorative elements */}
+                <div className="absolute top-[15%] left-[15%] w-16 h-16 rounded-full bg-primary/20 animate-pulse"></div>
+                <div className="absolute bottom-[20%] right-[10%] w-12 h-12 rounded-full bg-secondary/20 animate-pulse animation-delay-500"></div>
+                <div className="absolute top-[60%] left-[25%] w-8 h-8 rounded-full bg-accent/20 animate-pulse animation-delay-1000"></div>
+              </div>
       </div>
     </section>
   );

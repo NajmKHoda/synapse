@@ -22,7 +22,8 @@ interface Student {
 interface Group {
   id: number;
   students: Student[];
-  reason: string;
+  reason?: string;
+  score?: number;
 }
 
 export default function Dashboard() {
@@ -40,6 +41,7 @@ export default function Dashboard() {
   const [scoreWeight, setScoreWeight] = useState(0.4)
   const [groupSize, setGroupSize] = useState(2)
   const [loadingGroups, setLoadingGroups] = useState(true)
+  const [customInstructions, setCustomInstructions] = useState("")
 
   const fetchStudents = async () => {
     if (!classId) return
@@ -109,19 +111,34 @@ export default function Dashboard() {
       if (data && data.length > 0 && data[0].groups) {
         const groupsData = data[0].groups;
         
-        // Format the groups data for display
+        // Format the groups data for display with new structure
         const formattedGroups = groupsData.map((group, index) => {
-          // Find the full student objects that match these IDs
-          const groupStudents = group.map(studentId => 
-            currentStudents.find(s => s.id.toString() === studentId) || 
-            { id: studentId, name: `Student ${studentId.substring(0, 6)}...`, email: 'No data available' }
-          );
-          
-          return {
-            id: index + 1,
-            students: groupStudents,
-            reason: `Group ${index + 1} was created based on compatibility between the student profiles.`
-          };
+          // Check if the group has the new format with ids and score
+          if (group.ids && group.score) {
+            // Find the full student objects that match these IDs
+            const groupStudents = group.ids.map(studentId => 
+              currentStudents.find(s => s.id.toString() === studentId) || 
+              { id: studentId, name: `Student ${studentId.substring(0, 6)}...`, email: 'No data available' }
+            );
+            
+            return {
+              id: index + 1,
+              students: groupStudents,
+              score: group.score
+            };
+          } else {
+            // Handle legacy format if needed
+            const groupStudents = group.map(studentId => 
+              currentStudents.find(s => s.id.toString() === studentId) || 
+              { id: studentId, name: `Student ${studentId.substring(0, 6)}...`, email: 'No data available' }
+            );
+            
+            return {
+              id: index + 1,
+              students: groupStudents,
+              reason: `Group ${index + 1} was created based on compatibility between the student profiles.`
+            };
+          }
         });
         
         setGroups(formattedGroups);
@@ -165,7 +182,7 @@ export default function Dashboard() {
     setIsPairing(true)
     
     try {
-      await group(classId, groupSize, personalityWeight, scoreWeight)
+      await group(classId, groupSize, personalityWeight, scoreWeight, customInstructions)
       await fetchGroups()
       setPairingComplete(true) // Set pairing complete after successful group generation
     } catch (error) {
@@ -375,12 +392,32 @@ export default function Dashboard() {
                               className="w-full h-2 bg-[var(--sunny)]/20 rounded-lg appearance-none cursor-pointer accent-[var(--sunny)]"
                             />
                           </div>
+                          
+                          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                            <div className="flex justify-between mb-2">
+                              <label className="text-sm font-medium text-gray-700">Custom Instructions</label>
+                            </div>
+                            <textarea 
+                              value={customInstructions}
+                              onChange={(e) => setCustomInstructions(e.target.value)}
+                              placeholder="Add any special instructions for group formation (e.g., 'Prioritize diversity in learning styles' or 'Keep certain students apart')"
+                              className="w-full p-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-mint focus:border-transparent min-h-[80px] text-sm"
+                            />
+                          </div>
                         </div>
                         
                         {isPairing ? (
                           <div className="w-full max-w-md">
                             <Progress value={70} className="h-2 mb-2" />
-                            <p className="text-mint text-sm animate-pulse">Generating optimal student groups...</p>
+                            <p className="text-mint text-sm animate-pulse">
+                              {[
+                                "Creating optimal learning teams...",
+                                "Analyzing student compatibility...",
+                                "Balancing skill sets across groups...",
+                                "Matching complementary personalities...",
+                                "Crafting collaborative dream teams..."
+                              ][Math.floor(Date.now() / 1000) % 5]}
+                            </p>
                           </div>
                         ) : (
                           <Button 
@@ -447,10 +484,20 @@ export default function Dashboard() {
                                 ))}
                               </div>
                               
-                              {/* <div className="text-sm text-gray-600">
-                                <p className="text-xs text-gray-500 mb-1">Why this works:</p>
-                                \{group.reason\}
-                              </div> */}
+                              {group.score !== undefined && (
+                                <div className="text-sm text-gray-600">
+                                  <p className="text-xs font-medium text-gray-700">
+                                    Compatibility Score: <span className="text-mint">{group.score.toFixed(2)}</span>
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {/* \{customInstructions && (
+                                <div className="mt-2 text-sm text-gray-600 border-t border-dashed border-gray-200 pt-2">
+                                  <p className="text-xs font-medium text-gray-700">Instructions:</p>
+                                  <p className="text-xs italic text-gray-500">{customInstructions}</p>
+                                </div>
+                              )\} */}
                             </div>
                           ))}
 

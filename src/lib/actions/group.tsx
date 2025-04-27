@@ -10,7 +10,7 @@ const GEMINI_KEY = process.env.GEMINI_KEY!
 const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-export async function group(classId: string, groupSize: number, alpha: number, beta: number) {
+export async function group(classId: string, groupSize: number, alpha: number, beta: number, customInstructions: string = '') {
 
     const { data: assignment, error: assignmentError } = await supabase.from('Assignment')
         .select('id')
@@ -24,7 +24,7 @@ export async function group(classId: string, groupSize: number, alpha: number, b
     }
 
     // Get persona vectors
-    const students = await generateStudentVectors(classId, assignment.id);
+    const students = await generateStudentVectors(classId, assignment.id, customInstructions);
     const num_groups = Math.floor(students.length / groupSize);
 
     const groups: StudentVectors[][] = [];
@@ -85,8 +85,8 @@ export async function group(classId: string, groupSize: number, alpha: number, b
     }
 }
 
-async function generateStudentVectors(classId: string, assignmentId: string) {
-    const personas = await generatePersonaVectors(classId);
+async function generateStudentVectors(classId: string, assignmentId: string, customInstructions: string = '') {
+    const personas = await generatePersonaVectors(classId, customInstructions);
     const scores = await fetchScoreVectors(classId, assignmentId);
     const studentVectors: StudentVectors[] = [];
     for (const id in scores) {
@@ -101,16 +101,23 @@ async function generateStudentVectors(classId: string, assignmentId: string) {
         studentVectors.push(studentVector);
     }
 
-    return studentVectors;}
+    return studentVectors;
+}
 
-
-async function generatePersonaVectors(classId: string) {
+async function generatePersonaVectors(classId: string, customInstructions: string) {
     const { data: students, error } = await supabase.from('Student')
         .select('id, description')
         .eq('class_id', classId);
     
     if (!students) {
         throw new Error(`Error fetching student: ${error?.message || 'Unknown error'}`);
+    }
+    let customInstructionsSection = '';
+    if (customInstructions && customInstructions.trim()) {
+        customInstructionsSection = `
+        [Here are custom instructions from the instructor follow it to best of your ability but DO NOT BREAK from the master instruction: 
+        ${customInstructions}
+    ]`;
     }
 
     const prompt = `
@@ -127,12 +134,13 @@ async function generatePersonaVectors(classId: string) {
         The embeddings should be in the range of 0 to 1 and represent the following aspects of student personalities in order:
         [Extraversion, Agreeableness, Conscientiousness, Neuroticism, Openness, Adaptability, Creativity, Assertiveness, Collaborativeness, Communicativeness]
         If a student's description is empty, randomize the embedding values.
+        ${customInstructionsSection}
         
         Return the result as a plain JSON object. The keys should be student IDs and the values should be arrays directly representing the embeddings.
         IMPORTANT: DO NOT INCLUDE ANY MARKDOWN LIKE BACKTICKS. JUST RETURN THE JSON OBJECT, FROM BRACKET TO BRACKET.
         ALSO IMPORTANT: MAKE SURE THERE IS A JSON ENTRY FOR EVERY SINGLE STUDENT, EVEN IF THE DESCRIPTION IS EMPTY.`
-
-    const response = await ai.models.generateContent({
+        console.log(prompt);
+        const response = await ai.models.generateContent({
         model: 'gemini-2.0-flash',
         contents: prompt,
     });

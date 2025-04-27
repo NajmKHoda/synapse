@@ -236,7 +236,7 @@ export default function StudentsPage() {
                                 Copy Link
                               </Button>
                               
-                              {!student.has_completed_assessment && student.email && !student.email_sent && (
+                              {/* {!student.has_completed_assessment && student.email && !student.email_sent && (
                                 <Button
                                   size="sm"
                                   onClick={() => sendPersonalityAssessment(student.id, student.email)}
@@ -246,7 +246,7 @@ export default function StudentsPage() {
                                   <Send className="h-3 w-3 mr-1" />
                                   Send Email
                                 </Button>
-                              )}
+                              )} */}
                             </div>
                           </td>
                         </tr>
