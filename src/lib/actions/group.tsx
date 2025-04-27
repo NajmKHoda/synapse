@@ -62,29 +62,15 @@ export async function group(classId: string, groupSize: number, alpha: number, b
         }
     }
 
-    const { data: groupRecords, error: groupError } = await supabase.from('GroupRecord')
-        .insert(groups.map(() => ({ assignment_id: assignment.id })))
-        .select('id');
-    
-    if (!groupRecords) {
-        throw new Error(`Error creating group record: ${groupError?.message || 'Unknown error'}`);
-    }
+    const groupStuff = groups.map(g => g.map(s => s.id));
+    const { error: groupError } = await supabase.from('Class')
+        .update({ group: groupStuff })
+        .eq('id', classId);
 
-    const groupIds = groupRecords.map(record => record.id);
-
-    const { error: joinError } = await supabase.from('StudentGroupJoin')
-        .insert(groups.flatMap((group, i) => 
-            group.map(student => ({
-                student_id: student.id,
-                group_record_id: groupIds[i]
-            }))
-        ));
-
-    if (joinError) {
-        throw new Error(`Error joining students to groups: ${joinError?.message || 'Unknown error'}`);
+    if (groupError) {
+        throw new Error(`Error updating group: ${groupError.message}`);
     }
 }
-
 
 async function generateStudentVectors(classId: string, assignmentId: string) {
     const personas = await generatePersonaVectors(classId);
