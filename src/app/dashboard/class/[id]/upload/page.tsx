@@ -112,11 +112,11 @@ export default function Dashboard() {
         const groupsData = data[0].groups;
         
         // Format the groups data for display with new structure
-        const formattedGroups = groupsData.map((group, index) => {
+        const formattedGroups = groupsData.map((group: any, index: any) => {
           // Check if the group has the new format with ids and score
           if (group.ids && group.score) {
             // Find the full student objects that match these IDs
-            const groupStudents = group.ids.map(studentId => 
+            const groupStudents = group.ids.map((studentId: any) => 
               currentStudents.find(s => s.id.toString() === studentId) || 
               { id: studentId, name: `Student ${studentId.substring(0, 6)}...`, email: 'No data available' }
             );
@@ -128,7 +128,7 @@ export default function Dashboard() {
             };
           } else {
             // Handle legacy format if needed
-            const groupStudents = group.map(studentId => 
+            const groupStudents = group.map((studentId: any) => 
               currentStudents.find(s => s.id.toString() === studentId) || 
               { id: studentId, name: `Student ${studentId.substring(0, 6)}...`, email: 'No data available' }
             );
@@ -197,18 +197,8 @@ export default function Dashboard() {
     
     setIsPairing(true)
     try {
-      // Delete from the correct table
-      const { error: deleteGroupsError } = await supabase
-        .from('StudentGroupJoin')
-        .delete()
-        .eq('class_id', classId)
-      
-      if (deleteGroupsError) {
-        console.error('Error deleting groups:', deleteGroupsError)
-      }
-      
-      setPairingComplete(false)
-      setGroups([])
+      setPairingComplete(false);
+      setGroups([]);
     } catch (err) {
       console.error('Failed to reset groups:', err)
     } finally {

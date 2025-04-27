@@ -66,11 +66,6 @@ export async function group(classId: string, groupSize: number, alpha: number, b
         }
     }
 
-    // Take average
-    groupMatchRatings.forEach((r, i, arr) => {
-        arr[i] = r / groups[i].length;
-    });
-
     const groupStuff = groups.map((g, i) => ({
         score: groupMatchRatings[i],
         ids: g.map(s => s.id)
