@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
-import Button from "@/components/ui/Button"
+import  Button  from "@/components/ui/Button"
 import { supabase } from "@/lib/supabase"
-import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react"
+import { Loader2, CheckCircle2, ArrowLeft, Brain, ChevronRight } from 'lucide-react'
+import Link from "next/link"
 
 export default function PersonalityForm() {
   const params = useParams()
@@ -24,6 +25,9 @@ export default function PersonalityForm() {
     question3: "",
     idealPartner: ""
   })
+
+  const [currentStep, setCurrentStep] = useState(1)
+  const totalSteps = 4
 
   const questions = {
     question1: {
@@ -106,9 +110,8 @@ export default function PersonalityForm() {
     fetchStudent()
   }, [studentId])
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+  const handleInputChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value })
   }
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -145,11 +148,40 @@ export default function PersonalityForm() {
       setSubmitting(false)
     }
   }
+
+  const handleNext = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1)
+      window.scrollTo(0, 0)
+    }
+  }
+
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+      window.scrollTo(0, 0)
+    }
+  }
+
+  const isStepComplete = () => {
+    switch (currentStep) {
+      case 1:
+        return !!formData.question1
+      case 2:
+        return !!formData.question2
+      case 3:
+        return !!formData.question3
+      case 4:
+        return !!formData.idealPartner
+      default:
+        return false
+    }
+  }
   
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-light via-white to-mint-light">
-        <Loader2 className="h-8 w-8 text-mint animate-spin" />
+        <Loader2 className="h-8 w-8 text-[var(--secondary)] animate-spin" />
       </div>
     )
   }
@@ -161,7 +193,7 @@ export default function PersonalityForm() {
           <CardContent className="p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Student Not Found</h2>
             <p className="text-gray-600 mb-4">Sorry, we couldn't find this student in our system.</p>
-            <Button onClick={() => router.push('/')} className="w-full bg-mint hover:bg-mint/90 text-white flex items-center justify-center">
+            <Button onClick={() => router.push('/')} className="w-full bg-[var(--secondary)] hover:bg-[var(--secondary)]/90 text-white flex items-center justify-center">
               <ArrowLeft className="h-4 w-4 mr-2" /> Return Home
             </Button>
           </CardContent>
@@ -176,14 +208,14 @@ export default function PersonalityForm() {
         <Card className="border-none shadow-fun rounded-2xl overflow-hidden max-w-md w-full">
           <CardContent className="p-6">
             <div className="flex flex-col items-center text-center">
-              <div className="h-16 w-16 rounded-full bg-mint/20 flex items-center justify-center mb-4">
-                <CheckCircle2 className="h-8 w-8 text-mint" />
+              <div className="h-16 w-16 rounded-full bg-[var(--secondary)]/20 flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-8 w-8 text-[var(--secondary)]" />
               </div>
               <h2 className="text-xl font-semibold text-gray-800 mb-2">Already Completed</h2>
               <p className="text-gray-600 mb-6">
                 You have already completed the personality assessment. Thank you for your participation!
               </p>
-              <Button onClick={() => router.push('/')} className="bg-mint hover:bg-mint/90 text-white flex items-center">
+              <Button onClick={() => router.push('/')} className="bg-[var(--secondary)] hover:bg-[var(--secondary)]/90 text-white flex items-center">
                 <ArrowLeft className="h-4 w-4 mr-2" /> Return to Homepage
               </Button>
             </div>
@@ -199,17 +231,17 @@ export default function PersonalityForm() {
         <Card className="border-none shadow-fun rounded-2xl overflow-hidden max-w-md w-full">
           <CardContent className="p-6">
             <div className="flex flex-col items-center text-center">
-              <div className="h-16 w-16 rounded-full bg-mint/20 flex items-center justify-center mb-4">
-                <CheckCircle2 className="h-8 w-8 text-mint" />
+              <div className="h-16 w-16 rounded-full bg-[var(--secondary)]/20 flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-8 w-8 text-[var(--secondary)]" />
               </div>
               <h2 className="text-xl font-semibold text-gray-800 mb-2">Thank You!</h2>
               <p className="text-gray-600 mb-2">
                 Your personality assessment has been submitted successfully. This will help us match you with compatible study partners.
               </p>
-              <p className="text-mint text-sm mb-6">
+              <p className="text-[var(--secondary)] text-sm mb-6">
                 Redirecting to your home...
               </p>
-              <Button onClick={() => router.push('/')} className="bg-mint hover:bg-mint/90 text-white">
+              <Button onClick={() => router.push('/')} className="bg-[var(--secondary)] hover:bg-[var(--secondary)]/90 text-white">
                 Go to Home
               </Button>
             </div>
@@ -220,186 +252,268 @@ export default function PersonalityForm() {
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-light via-white to-mint-light py-12 px-4">
-      <div className="container mx-auto max-w-2xl">
-        <Card className="border-none shadow-fun rounded-2xl overflow-hidden">
-          <CardContent className="p-8">
-            <div className="mb-8 text-center">
-              <div className="mx-auto w-16 h-16 bg-mint/20 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle2 className="h-8 w-8 text-mint" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">Student Personality Assessment</h1>
-              <p className="text-gray-600 max-w-md mx-auto">
-                Hello, <span className="text-mint font-medium">{student.name}</span>! Complete this short assessment to help us match you with compatible study partners.
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-sky-light via-white to-mint-light">
+
+      <main className="container mx-auto px-4 py-12">
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Student Learning Preferences</h1>
+            <p className="text-gray-600">
+              Hello, <span className="text-[var(--secondary)] font-medium">{student.name}</span>! Help us understand how you learn best so we can match you with compatible study partners.
+            </p>
+          </div>
+
+          {/* Progress bar */}
+          <div className="mb-8">
+            <div className="flex justify-between mb-2">
+              <span className="text-sm font-medium text-gray-600">
+                Step {currentStep} of {totalSteps}
+              </span>
+              <span className="text-sm font-medium text-gray-600">
+                {Math.round((currentStep / totalSteps) * 100)}% Complete
+              </span>
             </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="space-y-5 bg-sky-light/30 p-6 rounded-xl border border-sky-light">
-                <h3 className="text-lg font-medium text-gray-800">1. When working with others, I prefer to:</h3>
-                <div className="space-y-3">
-                  {[
-                    { value: "A", label: "Lead the group and organize tasks" },
-                    { value: "B", label: "Collaborate equally and share ideas" },
-                    { value: "C", label: "Support others and follow instructions" },
-                    { value: "D", label: "Work independently and check in when needed" }
-                  ].map((option) => (
-                    <label 
-                      key={option.value} 
-                      className={`flex items-start gap-3 p-4 rounded-lg border transition-all ${
-                        formData.question1 === option.value 
-                          ? "border-mint bg-mint/10 shadow-sm" 
-                          : "border-gray-200 hover:border-mint/50 bg-white"
-                      } cursor-pointer`}
-                    >
-                      <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 ${
-                        formData.question1 === option.value
-                          ? "border-mint bg-mint" 
-                          : "border-gray-300"
-                      }`}>
-                        {formData.question1 === option.value && (
-                          <div className="h-2 w-2 rounded-full bg-white"></div>
-                        )}
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[var(--primary)] via-[var(--secondary)] to-[var(--accent)]"
+                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Form content */}
+          <Card className="border-none shadow-fun rounded-2xl overflow-hidden">
+            <CardContent className="p-8">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (currentStep === totalSteps) {
+                  handleSubmit(e);
+                } else {
+                  handleNext();
+                }
+              }}>
+                {currentStep === 1 && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="h-10 w-10 rounded-full bg-[var(--primary)]/20 flex items-center justify-center">
+                        <span className="font-bold text-[var(--primary)]">1</span>
                       </div>
-                      <div>
-                        <span className="font-medium text-gray-800">{option.value})</span> {option.label}
+                      <h2 className="text-xl font-bold text-gray-800">Working Style</h2>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-gray-800">{questions.question1.text}</h3>
+                      <div className="space-y-3">
+                        {Object.entries(questions.question1.options).map(([key, value]) => (
+                          <label
+                            key={key}
+                            className={`flex items-start gap-3 p-4 rounded-xl border transition-all ${
+                              formData.question1 === key
+                                ? "border-[var(--primary)] bg-[var(--primary)]/10 shadow-sm"
+                                : "border-gray-200 hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/5 bg-white"
+                            } cursor-pointer`}
+                          >
+                            <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 ${
+                              formData.question1 === key
+                                ? "border-[var(--primary)] bg-[var(--primary)]"
+                                : "border-gray-300"
+                            }`}>
+                              {formData.question1 === key && (
+                                <div className="h-2 w-2 rounded-full bg-white"></div>
+                              )}
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-800">{key})</span> {value}
+                            </div>
+                            <input
+                              type="radio"
+                              name="question1"
+                              value={key}
+                              checked={formData.question1 === key}
+                              onChange={(e) => handleInputChange("question1", e.target.value)}
+                              className="sr-only"
+                              required
+                            />
+                          </label>
+                        ))}
                       </div>
-                      <input
-                        type="radio"
-                        name="question1"
-                        value={option.value}
-                        checked={formData.question1 === option.value}
-                        onChange={handleInputChange}
-                        className="sr-only"
-                        required
-                      />
-                    </label>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="space-y-5 bg-mint-light/30 p-6 rounded-xl border border-mint-light">
-                <h3 className="text-lg font-medium text-gray-800">2. In a study partner, I value most:</h3>
-                <div className="space-y-3">
-                  {[
-                    { value: "A", label: "Clear communication and responsiveness" },
-                    { value: "B", label: "Motivation and strong work ethic" },
-                    { value: "C", label: "Creativity and problem-solving skills" },
-                    { value: "D", label: "Patience and willingness to explain concepts" }
-                  ].map((option) => (
-                    <label 
-                      key={option.value} 
-                      className={`flex items-start gap-3 p-4 rounded-lg border transition-all ${
-                        formData.question2 === option.value 
-                          ? "border-mint bg-mint/10 shadow-sm" 
-                          : "border-gray-200 hover:border-mint/50 bg-white"
-                      } cursor-pointer`}
-                    >
-                      <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 ${
-                        formData.question2 === option.value
-                          ? "border-mint bg-mint" 
-                          : "border-gray-300"
-                      }`}>
-                        {formData.question2 === option.value && (
-                          <div className="h-2 w-2 rounded-full bg-white"></div>
-                        )}
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-800">{option.value})</span> {option.label}
-                      </div>
-                      <input
-                        type="radio"
-                        name="question2"
-                        value={option.value}
-                        checked={formData.question2 === option.value}
-                        onChange={handleInputChange}
-                        className="sr-only"
-                        required
-                      />
-                    </label>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="space-y-5 bg-sky-light/30 p-6 rounded-xl border border-sky-light">
-                <h3 className="text-lg font-medium text-gray-800">3. When approaching a new or hard topic, I usually:</h3>
-                <div className="space-y-3">
-                  {[
-                    { value: "A", label: "Dive right in and figure it out as I go" },
-                    { value: "B", label: "Look for examples and similar problems first" },
-                    { value: "C", label: "Ask questions early and often" },
-                    { value: "D", label: "Plan a step-by-step approach carefully before starting" }
-                  ].map((option) => (
-                    <label 
-                      key={option.value} 
-                      className={`flex items-start gap-3 p-4 rounded-lg border transition-all ${
-                        formData.question3 === option.value 
-                          ? "border-mint bg-mint/10 shadow-sm" 
-                          : "border-gray-200 hover:border-mint/50 bg-white"
-                      } cursor-pointer`}
-                    >
-                      <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 ${
-                        formData.question3 === option.value
-                          ? "border-mint bg-mint" 
-                          : "border-gray-300"
-                      }`}>
-                        {formData.question3 === option.value && (
-                          <div className="h-2 w-2 rounded-full bg-white"></div>
-                        )}
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-800">{option.value})</span> {option.label}
-                      </div>
-                      <input
-                        type="radio"
-                        name="question3"
-                        value={option.value}
-                        checked={formData.question3 === option.value}
-                        onChange={handleInputChange}
-                        className="sr-only"
-                        required
-                      />
-                    </label>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="space-y-4 bg-mint-light/30 p-6 rounded-xl border border-mint-light">
-                <h3 className="text-lg font-medium text-gray-800">
-                  Tell us in 1–2 sentences: What's your ideal study partner like, and how do you usually like to work on schoolwork?
-                </h3>
-                <textarea
-                  name="idealPartner"
-                  value={formData.idealPartner}
-                  onChange={handleInputChange}
-                  required
-                  rows={4}
-                  className="w-full p-4 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-mint/50 focus:border-transparent resize-none shadow-sm"
-                  placeholder="Describe your ideal study partner..."
-                />
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-mint hover:bg-mint/90 text-white p-4 rounded-lg text-lg font-medium shadow-md hover:shadow-lg transition-all"
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Submitting...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <CheckCircle2 className="h-5 w-5" />
-                    <span>Submit Assessment</span>
+                    </div>
                   </div>
                 )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+
+                {currentStep === 2 && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="h-10 w-10 rounded-full bg-[var(--secondary)]/20 flex items-center justify-center">
+                        <span className="font-bold text-[var(--secondary)]">2</span>
+                      </div>
+                      <h2 className="text-xl font-bold text-gray-800">Partner Values</h2>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-gray-800">{questions.question2.text}</h3>
+                      <div className="space-y-3">
+                        {Object.entries(questions.question2.options).map(([key, value]) => (
+                          <label
+                            key={key}
+                            className={`flex items-start gap-3 p-4 rounded-xl border transition-all ${
+                              formData.question2 === key
+                                ? "border-[var(--secondary)] bg-[var(--secondary)]/10 shadow-sm"
+                                : "border-gray-200 hover:border-[var(--secondary)]/30 hover:bg-[var(--secondary)]/5 bg-white"
+                            } cursor-pointer`}
+                          >
+                            <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 ${
+                              formData.question2 === key
+                                ? "border-[var(--secondary)] bg-[var(--secondary)]"
+                                : "border-gray-300"
+                            }`}>
+                              {formData.question2 === key && (
+                                <div className="h-2 w-2 rounded-full bg-white"></div>
+                              )}
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-800">{key})</span> {value}
+                            </div>
+                            <input
+                              type="radio"
+                              name="question2"
+                              value={key}
+                              checked={formData.question2 === key}
+                              onChange={(e) => handleInputChange("question2", e.target.value)}
+                              className="sr-only"
+                              required
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 3 && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="h-10 w-10 rounded-full bg-[var(--accent)]/20 flex items-center justify-center">
+                        <span className="font-bold text-[var(--accent)]">3</span>
+                      </div>
+                      <h2 className="text-xl font-bold text-gray-800">Learning Approach</h2>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-gray-800">{questions.question3.text}</h3>
+                      <div className="space-y-3">
+                        {Object.entries(questions.question3.options).map(([key, value]) => (
+                          <label
+                            key={key}
+                            className={`flex items-start gap-3 p-4 rounded-xl border transition-all ${
+                              formData.question3 === key
+                                ? "border-[var(--accent)] bg-[var(--accent)]/10 shadow-sm"
+                                : "border-gray-200 hover:border-[var(--accent)]/30 hover:bg-[var(--accent)]/5 bg-white"
+                            } cursor-pointer`}
+                          >
+                            <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 ${
+                              formData.question3 === key
+                                ? "border-[var(--accent)] bg-[var(--accent)]"
+                                : "border-gray-300"
+                            }`}>
+                              {formData.question3 === key && (
+                                <div className="h-2 w-2 rounded-full bg-white"></div>
+                              )}
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-800">{key})</span> {value}
+                            </div>
+                            <input
+                              type="radio"
+                              name="question3"
+                              value={key}
+                              checked={formData.question3 === key}
+                              onChange={(e) => handleInputChange("question3", e.target.value)}
+                              className="sr-only"
+                              required
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 4 && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="h-10 w-10 rounded-full bg-[var(--primary)]/20 flex items-center justify-center">
+                        <span className="font-bold text-[var(--primary)]">4</span>
+                      </div>
+                      <h2 className="text-xl font-bold text-gray-800">Ideal Study Partner</h2>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-medium text-gray-800">
+                        Tell us in 1–2 sentences: What's your ideal study partner like, and how do you usually like to
+                        work on schoolwork?
+                      </h3>
+                      <textarea
+                        name="idealPartner"
+                        value={formData.idealPartner}
+                        onChange={(e) => handleInputChange("idealPartner", e.target.value)}
+                        placeholder="My ideal study partner is..."
+                        className="min-h-[120px] w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 focus:border-transparent resize-none"
+                        required
+                      />
+                      <p className="text-sm text-gray-500">
+                        This helps us better understand your preferences beyond multiple-choice questions.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation buttons */}
+                <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePrevious}
+                    disabled={currentStep === 1}
+                    className="border-gray-200 hover:border-gray-300 rounded-lg"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4 inline-flex" /> Previous
+                  </Button>
+
+                  {currentStep < totalSteps ? (
+                    <Button
+                      type="submit"
+                      disabled={!isStepComplete()}
+                      className="bg-[var(--secondary)] text-white hover:bg-[var(--secondary)]/90 rounded-lg inline-flex flex items-center"
+                    >
+                      Next <ChevronRight className="ml-2 h-4 w-4 inline-flex" />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={!isStepComplete() || submitting}
+                      className="bg-[var(--primary)] text-gray-800 hover:bg-[var(--primary)]/90 rounded-lg"
+                    >
+                      {submitting ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Submitting...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 inline-flex" />
+                          <span>Submit</span>
+                        </div>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   )
 }
+
