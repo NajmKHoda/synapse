@@ -29,26 +29,36 @@ export async function group(classId: string, groupSize: number, alpha: number, b
 
     const groups: StudentVectors[][] = [];
 
+    // Assign a random student to each group
     let studentsLeft = [...students];
-    for (let i = 0; i < num_groups; i++) {
-        let idRandom = Math.floor(Math.random() * studentsLeft.length);
-        let last = studentsLeft[idRandom];
+    try {
+        for (let i = 0; i < num_groups; i++) {
+            let idx = Math.floor(Math.random() * studentsLeft.length);
+            groups.push([studentsLeft[idx]]);
+            studentsLeft.splice(idx, 1);
+        }
+    } catch (error) {
+        throw new Error("Not enough students for a group that size!");
+    }
 
-        // Push to group, remove from studentsLeft
-        groups.push([last]);
-        studentsLeft.splice(idRandom, 1);
-
-        while (groups[i].length < groupSize && studentsLeft.length > 0) {
-            const minDiff = Number.MAX_VALUE;
-            for (const student of studentsLeft) {
-                const diff = studentDiff(last, student, alpha, beta);
-                if (diff < minDiff) {
-                    groups[i].push(student);
-                    last = student;
-                    studentsLeft.splice(studentsLeft.indexOf(student), 1);
-                    break;
-                }
+    // Loop until all students have been removed from the array copy
+    while (studentsLeft.length > 0) {
+        for (let i = 0; i < num_groups; i++) {
+            if (studentsLeft.length === 0) {
+                break;
             }
+
+            // Compare with last student in the group
+            const group = groups[i];
+            const matchRatings = [];
+            for (const studentVec of studentsLeft) {
+                matchRatings.push(studentDiff(studentVec, group[group.length - 1], alpha, beta));
+            }
+
+            // Push highest and remove
+            const maxRatingIdx = matchRatings.indexOf(Math.max(...matchRatings));
+            group.push(studentsLeft[maxRatingIdx]);
+            studentsLeft.splice(maxRatingIdx, 1);
         }
     }
 
