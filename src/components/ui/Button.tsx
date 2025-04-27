@@ -3,13 +3,15 @@ const Button = ({
   className,
   variant = 'default',
   size = 'md',
-  onClick
+  onClick,
+  disabled = false
 }: {
   children: React.ReactNode;
   className?: string;
   variant?: 'outline' | 'default';
   size?: 'sm' | 'md' | 'lg';
   onClick?: () => void;
+  disabled?: boolean;
 }) => {
   const baseClasses = "rounded-md font-medium transition-colors";
   const variantClasses = variant === 'outline'
@@ -22,10 +24,13 @@ const Button = ({
     lg: "py-3 px-6 text-lg"
   }[size];
 
+  const disabledClasses = disabled ? "opacity-50 cursor-not-allowed" : "";
+
   return (
     <button
-      className={`${baseClasses} ${variantClasses} ${sizeClasses} ${className || ''}`}
+      className={`${baseClasses} ${variantClasses} ${sizeClasses} ${disabledClasses} ${className || ''}`}
       onClick={onClick}
+      disabled={disabled}
     >
       {children}
     </button>

@@ -28,4 +28,18 @@ const CardContent = React.forwardRef<
 ))
 CardContent.displayName = "CardContent"
 
-export { Card, CardContent }
+interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  CardFooterProps
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={`p-6 border-t ${className}`}
+    {...props}
+  />
+))
+CardFooter.displayName = "CardFooter"
+
+export { Card, CardContent, CardFooter }

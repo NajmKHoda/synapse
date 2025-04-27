@@ -34,12 +34,14 @@ export function Hero() {
                 </Button>
               </Link>
             ) : (
+            <Link href="/signup">
               <Button 
                 size="lg" 
                 className="bg-[var(--secondary)] text-white hover:bg-[var(--secondary)]/90 gap-2 rounded-xl shadow-fun whitespace-nowrap flex items-center"
               >
                 Sign Up <ArrowRight className="h-4 w-4 flex-shrink-0" />
               </Button>
+            </Link>
             )}
             <Button
               size="lg"

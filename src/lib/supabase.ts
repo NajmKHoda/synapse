@@ -36,13 +36,70 @@ export const signInWithEmail = async (email: string, password: string) => {
 }
 
 export const signInWithGoogle = async () => {
-  const supabase = getSupabase();
-  return supabase.auth.signInWithOAuth({
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/dashboard`,
-    },
+      redirectTo: `${window.location.origin}/auth/callback`,
+    }
   });
+  
+  // Check if authentication was successful
+  if (data?.url) {
+    // Store a flag in localStorage to check after redirect
+    localStorage.setItem('checkTeacherRecord', 'true');
+  }
+  
+  return { data, error };
+};
+
+// Add a new function to create teacher record
+export const createTeacherRecord = async (userId: string, name: string) => {
+  const { data, error } = await supabase
+    .from('Teacher')
+    .insert([{ id: userId, name: name }])
+    .select();
+  
+  return { data, error };
+};
+
+// Function to check if a teacher record exists
+export const checkTeacherExists = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('Teacher')
+    .select('id')
+    .eq('id', userId)
+    .single();
+  
+  return { exists: !!data, error };
+};
+
+// Add a new function to check and create teacher record after OAuth redirect
+export const checkAndCreateTeacherAfterAuth = async () => {
+  // Check if we need to verify teacher record
+  const shouldCheck = localStorage.getItem('checkTeacherRecord');
+  
+  if (shouldCheck) {
+    // Clear the flag
+    localStorage.removeItem('checkTeacherRecord');
+    
+    // Get current user
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (userData?.user) {
+      const userId = userData.user.id;
+      const { exists } = await checkTeacherExists(userId);
+      
+      if (!exists) {
+        // Get user's name from their profile
+        const userName = userData.user.user_metadata?.full_name || 
+                         userData.user.user_metadata?.name || 
+                         'Teacher';
+        
+        // Create teacher record
+        await createTeacherRecord(userId, userName);
+      }
+    }
+  }
 };
 
 export const signOut = async () => {
