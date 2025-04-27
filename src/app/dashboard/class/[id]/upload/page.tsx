@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import FileUpload from "@/components/FileUpload"
 import { supabase } from "@/lib/supabase"
+import { group } from '@/lib/actions/group'
 
 interface Student {
   id: number;
@@ -233,7 +234,7 @@ export default function Dashboard() {
                           </div>
                         ) : (
                           <Button 
-                            onClick={simulateGeminiPairing}
+                            onClick={() => group(classId, 5, 0.5, 0.5)}
                             className="bg-mint hover:bg-mint/90 text-white"
                           >
                             <Sparkles className="h-4 w-4 mr-2 inline-flex" />

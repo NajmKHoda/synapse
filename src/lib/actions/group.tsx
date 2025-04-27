@@ -1,6 +1,6 @@
 'use server';
 
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -10,7 +10,7 @@ const GEMINI_KEY = process.env.GEMINI_KEY!
 const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-export async function group(classId: string, groupSize: number) {
+export async function group(classId: string, groupSize: number, alpha: number, beta: number) {
 
     const { data: assignment, error: assignmentError } = await supabase.from('Assignment')
         .select('id')
@@ -41,7 +41,7 @@ export async function group(classId: string, groupSize: number) {
         while (groups[i].length < groupSize && studentsLeft.length > 0) {
             const minDiff = Number.MAX_VALUE;
             for (const student of studentsLeft) {
-                const diff = studentDiff(last, student, 0.5);
+                const diff = studentDiff(last, student, alpha, beta);
                 if (diff < minDiff) {
                     groups[i].push(student);
                     last = student;
@@ -51,8 +51,6 @@ export async function group(classId: string, groupSize: number) {
             }
         }
     }
-
-    const idGroups = groups.map(group => group.map(student => student.id));
 
     const { data: groupRecords, error: groupError } = await supabase.from('GroupRecord')
         .insert(groups.map(() => ({ assignment_id: assignment.id })))
@@ -68,7 +66,7 @@ export async function group(classId: string, groupSize: number) {
         .insert(groups.flatMap((group, i) => 
             group.map(student => ({
                 student_id: student.id,
-                group_id: groupIds[i]
+                group_record_id: groupIds[i]
             }))
         ));
 
@@ -96,6 +94,7 @@ async function generateStudentVectors(classId: string, assignmentId: string) {
 
     return studentVectors;}
 
+
 async function generatePersonaVectors(classId: string) {
     const { data: students, error } = await supabase.from('Student')
         .select('id, description')
@@ -105,23 +104,40 @@ async function generatePersonaVectors(classId: string) {
         throw new Error(`Error fetching student: ${error?.message || 'Unknown error'}`);
     }
 
-    const response = await ai.models.embedContent({
-        model: 'gemini-embedding-exp-03-07',
-        contents: students.map((student) => student.description),
+    const prompt = `
+        Generate numeric embedding vectors of length 10 for the following student descriptions; each description is a short paragraph about the student.
+        The student descriptions will be given to you as a JSON object, where keys are student IDs and values are the corresponding descriptions.
+        Here are the descriptions:
+
+        ${JSON.stringify(
+            Object.fromEntries(students.map(s => [
+                s.id,
+                s.description
+            ])), undefined, ' ')}
+
+        The embeddings should be in the range of 0 to 1 and represent the following aspects of student personalities in order:
+        [Extraversion, Agreeableness, Conscientiousness, Neuroticism, Openness, Adaptability, Creativity, Assertiveness, Collaborativeness, Communicativeness]
+        If a student's description is empty, randomize the embedding values.
+        
+        Return the result as a plain JSON object. The keys should be student IDs and the values should be arrays directly representing the embeddings.
+        IMPORTANT: DO NOT INCLUDE ANY MARKDOWN LIKE BACKTICKS. JUST RETURN THE JSON OBJECT, FROM BRACKET TO BRACKET.
+        ALSO IMPORTANT: MAKE SURE THERE IS A JSON ENTRY FOR EVERY SINGLE STUDENT, EVEN IF THE DESCRIPTION IS EMPTY.`
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: prompt,
     });
 
-    if (!response.embeddings) {
+    if (!response.text) {
         throw new Error(`Error generating embeddings`);
     }
 
-    return Object.fromEntries(
-        response.embeddings.map((e, i) => [students[i].id, e.values!])
-    ) as Record<string, number[]>;
+    return JSON.parse(removeMarkdown(response.text));
 }
 
 async function fetchScoreVectors(classId: string, assignmentId: string) {
     // Get all scores associated with the assignment
-    const { data: scores, error: scoreError } = await supabase.from('Scores')
+    const { data: scores, error: scoreError } = await supabase.from('Score')
         .select('student_id, data')
         .eq('assignment_id', assignmentId);
 
@@ -134,10 +150,10 @@ async function fetchScoreVectors(classId: string, assignmentId: string) {
     );
 }
 
-function studentDiff(a: StudentVectors, b: StudentVectors, alpha: number) {
+function studentDiff(a: StudentVectors, b: StudentVectors, alpha: number, beta: number) {
     const scoreDiff = meanAbsDiff(a.scores, b.scores);
     const personaDiff = cosineSimilarity(a.personaEmbedding, b.personaEmbedding);
-    return alpha * scoreDiff + personaDiff * (1 - alpha);
+    return alpha * scoreDiff + personaDiff;
 }
 
 function meanAbsDiff(a: number[], b: number[]) {
@@ -151,6 +167,11 @@ function cosineSimilarity(a: number[], b: number[]) {
     return dotProduct / (magnitudeA * magnitudeB);
 }
 
+function removeMarkdown(jsonText: string): string {
+    const markdownRegex = /^```json\s*([\s\S]*?)\s*```$/;
+    const match = jsonText.match(markdownRegex);
+    return match ? match[1] : jsonText;
+}
 
 interface StudentVectors {
     id: string;
