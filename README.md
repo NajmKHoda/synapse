@@ -1,6 +1,6 @@
 # Synapse
 
-![alt text](image.png)
+![alt text](/docs/thumbnail.png)
 
 **Synapse** is an AI-powered administrative platform designed for educators to optimize student placement in learning groups. By combining quantitative scoring data with qualitative personality surveys, Synapse helps create the most effective, complementary groupings to maximize learning outcomes and enhance classroom dynamics.
 
